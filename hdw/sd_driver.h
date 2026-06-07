@@ -33,7 +33,7 @@ typedef struct
 }rx_param;
 
 void SDInit(void);
-void sd_send(uint8_t *cmd);
-uint8_t *sd_recieve(uint8_t *buf, uint8_t len);
+void sd_send(tx_param *pkg);
+uint8_t *sd_recieve(rx_param *pkg);
 
 #endif

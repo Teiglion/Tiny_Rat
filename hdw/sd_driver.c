@@ -3,12 +3,26 @@
 static void sd_select(){gpio_put(SD_CS,0);}
 static void sd_deselect(){gpio_put(SD_CS,1);}
 
-void sd_send(uint8_t *cmd, uint8_t len){spi_write_blocking(SD_SPI_PORT,cmd,len);}
-
-uint8_t *sd_recieve(uint8_t *buf,uint8_t len)
+void sd_send(tx_param *pkg)
 {
-    spi_read_blocking(SD_SPI_PORT,0xFF,buf,len);
-    return buf;
+    uint8_t buf[6];
+    buf[0]=0x40 | pkg->cmd;
+    buf[1]=pkg->arg >> 24;
+    buf[2]=pkg->arg >> 16;
+    buf[3]=pkg->arg >> 8;
+    buf[4]=pkg->arg & 0xFF;
+    buf[5]=pkg->crc;
+    if(!pkg->selected)pkg->selected=1;
+    spi_write_blocking(SD_SPI_PORT,buf,sizeof(buf));
+}
+
+uint8_t *sd_recieve(rx_param *pkg)
+{
+    
+   // spi_read_blocking(SD_SPI_PORT,0xFF,buf,6);
+   sd_deselect();
+   pkg->deselect=1;
+    //return buf;
 }
 
 void SDInit(void)
@@ -23,17 +37,17 @@ void SDInit(void)
     gpio_set_dir(SD_CS,GPIO_OUT);
     gpio_put(SD_CS,1);
 
-    sd_select();
     {
-        uint8_t cmd[10]={0xFF};
-        sd_send_cmd(cmd);
+        uint8_t buf[10]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+        spi_write_blocking(SD_SPI_PORT,buf,sizeof(buf));
     }
 
     {
-        uint8_t cmd[6]={0x40,0x00,0x00,0x00,0x00,0x95};
-        sd_send_cmd(cmd);
-        uint8_t response[8];
-        sd_response(response,0x08);
+        tx_param pkg={.cmd=0,.arg=0,.crc=0,.selected=0};
+        pkg.arg=0x00;
+        pkg.crc=0x95;
+        sd_send(&pkg);
+
     }
 
 

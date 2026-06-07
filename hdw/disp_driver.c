@@ -4,7 +4,7 @@ static void display_select(){gpio_put(PIN_LCD_CS,0);}
 static void display_deselect(){gpio_put(PIN_LCD_CS,1);}
 static void display_cmd_mode(){gpio_put(PIN_LCD_DC,0);}
 static void display_data_mode(){gpio_put(PIN_LCD_DC,1);}
-//static void DisplayDeinit(){spi_deinit(LCD_SPI_PORT);}
+
 
 void lcd_reset() {
     gpio_put(PIN_LCD_RST, 1);
@@ -70,8 +70,8 @@ void DisplayInit()
     lcd_write_cmd(0x01);
     sleep_ms(150);
 
-    lcd_write_cmd(0x11);
-    sleep_ms(120);
+        lcd_write_cmd(0x11);
+        sleep_ms(120);
 
     {
         uint8_t d[]={0x55};

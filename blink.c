@@ -41,10 +41,6 @@ int pico_button_init(void) {
 int main() {
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
-    gpio_put(PIN_LED_GREEN,test());
-    sleep_ms(50);
-    gpio_put(PIN_LED_RED,!test());
-    sleep_ms(50);
     layer l={0,0,240,280};
     tusb_init();
     DisplayInit();

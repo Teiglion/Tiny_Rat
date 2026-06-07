@@ -40,7 +40,7 @@ add_executable(blink
     usb_descriptors.c
     hdw/disp_driver.c
     layers.c
-    hdw/flash.c
+    hdw/sd_driver.c
     )
 
 # pull in common dependencies
@@ -51,9 +51,5 @@ target_include_directories(blink PRIVATE
 if (PICO_CYW43_SUPPORTED)
     target_link_libraries(blink pico_cyw43_arch_none)
 endif()
-
-pico_set_linker_script(blink ${CMAKE_CURRENT_LIST_DIR}/memmap_disk.ld)
-# create map/bin/hex file etc.
-pico_add_extra_outputs(blink)
 
 # add url via pico_set_program_url
