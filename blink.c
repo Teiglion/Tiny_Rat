@@ -3,14 +3,15 @@
 #include "tusb.h"
 #include "hdw/disp_driver.h"
 #include "hdw/sd_driver.h"
+#include "hdw/FatFS/ff.h"
 #include "layers.h"
 
-#define PIN_LED_RED      10
-#define PIN_LED_GREEN    11
-#define PIN_BUT1          6
-#define PIN_BUT2          7  
-#define PIN_BUT3          8
-#define PIN_BUT4          9
+#define PIN_LED_RED 10
+#define PIN_LED_GREEN 11
+#define PIN_BUT1 6
+#define PIN_BUT2 7
+#define PIN_BUT3 8
+#define PIN_BUT4 9
 
 int pico_led_init(void) {
     gpio_init(PIN_LED_RED);
@@ -38,18 +39,49 @@ int pico_button_init(void) {
     return PICO_OK;
 }
 
+static void set_mode_leds(bool usb_disk_mode)
+{
+    gpio_put(PIN_LED_RED, usb_disk_mode ? 1 : 0);
+    gpio_put(PIN_LED_GREEN, usb_disk_mode ? 0 : 1);
+}
+
 int main() {
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
-    layer l={0,0,240,280};
-    tusb_init();
-    DisplayInit();
-    //load_img("1.res",&l);
 
-    while (true) {
-        tud_task();
-        //gpio_put(PIN_LED_RED, tud_mounted());
-        //gpio_put(PIN_LED_GREEN, !tud_mounted());
-        sleep_ms(10);
+    pico_button_init();
+    sleep_ms(30);
+
+    bool usb_disk_mode = (gpio_get(PIN_BUT1) == 0);
+    set_mode_leds(usb_disk_mode);
+
+    SDInit();
+
+    if (usb_disk_mode)
+    {
+        sleep_ms(100);
+        tusb_init();
+
+        while (true) {
+            tud_task();
+        }
+    }
+    else {
+        FATFS fs;
+        FRESULT fr;
+        DisplayInit();
+        layer l={.x=0,.y=0,.w=240,.h=280};
+
+        fr = f_mount(&fs, "", 1);
+        hard_assert(fr == FR_OK);
+        load_img("1.res",&l);
+        load_buf(&l);
+        
+        while (true) {
+            sleep_ms(10);
+            if(gpio_get(PIN_BUT2) == 0)
+            load_img("2.res",&l);
+            load_buf(&l);
+        }
     }
 }

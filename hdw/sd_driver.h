@@ -22,18 +22,25 @@ typedef struct
 
 typedef struct 
 {
-    uint8_t resp_len;
+    size_t resp_len;
     uint8_t *resp_buf;
-    uint8_t wait_limit;
-    bool data_flag;
+    uint32_t wait_limit;
     uint8_t *data_buf;
-    uint8_t data_len;
+    size_t data_len;
+    uint8_t expected_r1;
+    uint8_t expected_crc[2];
+    bool error;
     bool crc_ok;
-    bool deselect;  
 }rx_param;
+
+extern bool sd_initialized;
+extern bool sd_is_sdhc;
 
 void SDInit(void);
 void sd_send(tx_param *pkg);
-uint8_t *sd_recieve(rx_param *pkg);
+void sd_recieve(rx_param *pkg);
+bool sd_read_block(uint32_t block_num, uint8_t *buf, size_t len);
+bool sd_write_block(uint32_t block_num, const uint8_t *buf, size_t len);
+bool sd_sector_count(uint32_t *sector_count);
 
 #endif

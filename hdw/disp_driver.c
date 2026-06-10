@@ -1,5 +1,8 @@
 #include "disp_driver.h"
 
+#define FRAMEBUF_SIZE (LCD_WIDTH * LCD_HEIGHT * 2)
+
+uint8_t framebuf[FRAMEBUF_SIZE];
 static void display_select(){gpio_put(PIN_LCD_CS,0);}
 static void display_deselect(){gpio_put(PIN_LCD_CS,1);}
 static void display_cmd_mode(){gpio_put(PIN_LCD_DC,0);}
@@ -139,7 +142,7 @@ void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
     display_deselect();
 }
 
-void stream_img(FILE *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
     if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
     if(w==0 || h==0)return;
@@ -149,19 +152,39 @@ void stream_img(FILE *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     display_select();
     display_data_mode();
     uint32_t total=(uint32_t)w*h*2,sent=0;
-    uint8_t buf[128];
+    uint8_t buf[2048];
     while(sent<total)
     {
         uint32_t remaining=total-sent;
         uint32_t chunk = remaining > sizeof(buf) ? sizeof(buf) : remaining;
-        size_t got = fread(buf,1,chunk,f);
-        if(got!=chunk)
-        {
-            for(size_t i=got;i<chunk;i++)
-            buf[i]=0xFF;
+        UINT br = 0;
+        FRESULT fr = f_read(f, buf, chunk, &br);
+        if (fr != FR_OK) break;
+        if (br < chunk) {
+            for (UINT i = br; i < chunk; i++) buf[i] = 0x00;
         }
         spi_write_blocking(LCD_SPI_PORT,buf,chunk);
         sent+=chunk;
+    }
+    display_deselect();
+}
+
+void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
+    if(w==0 || h==0)return;
+    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
+    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
+    set_window(x,y,x+w-1,y+h-1);
+    display_select();
+    display_data_mode();
+    uint32_t total=(uint32_t)w*h*2,sent=0;
+    while(sent<total)
+    {
+        uint32_t chunk =total-sent;
+        if (chunk > 4096) chunk = 4096;
+        spi_write_blocking(LCD_SPI_PORT, framebuf + sent, chunk);
+        sent += chunk;
     }
     display_deselect();
 }

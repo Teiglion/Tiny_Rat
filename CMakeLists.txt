@@ -41,12 +41,20 @@ add_executable(blink
     hdw/disp_driver.c
     layers.c
     hdw/sd_driver.c
+    hdw/FatFS/ff.c
+    hdw/FatFS/diskio.c
+    hdw/FatFS/ffunicode.c
+    hdw/FatFS/fattime.c
+    hdw/msc_disk.c
     )
-
+pico_enable_stdio_usb(blink 1)
+pico_enable_stdio_uart(blink 0)
 # pull in common dependencies
 target_link_libraries(blink pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync)
 target_include_directories(blink PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/hdw
+    ${CMAKE_CURRENT_LIST_DIR}/hdw/FatFS
 )
 if (PICO_CYW43_SUPPORTED)
     target_link_libraries(blink pico_cyw43_arch_none)
