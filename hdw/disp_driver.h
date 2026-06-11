@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include "hardware/spi.h"
+#include "hardware/i2c.h"
 #include "pico/stdlib.h"
 #include "hdw/FatFS/ff.h"
 
@@ -14,6 +15,13 @@
 #define PIN_LCD_DC       12
 #define PIN_LCD_RST      28
 #define PIN_LCD_BK       29
+
+#define TOUCH_I2C_PORT     i2c0
+#define TOUCH_ADDR         0x15
+#define PIN_TOUCH_SDA      24
+#define PIN_TOUCH_SCL      25
+#define PIN_TOUCH_INT      26
+#define PIN_TOUCH_RST      27
 
 #define LCD_SPI_PORT     spi1
 #define LCD_WIDTH        240
@@ -35,5 +43,9 @@ void set_window(uint16_t x0,uint16_t y0,uint16_t x1,uint16_t y1);
 void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+
+void TouchInit(void);
+void TouchTestToFile(void);
+bool TouchRead(uint16_t *x, uint16_t *y);
 
 #endif

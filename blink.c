@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "tusb.h"
@@ -45,9 +46,12 @@ static void set_mode_leds(bool usb_disk_mode)
     gpio_put(PIN_LED_GREEN, usb_disk_mode ? 0 : 1);
 }
 
+
 int main() {
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
+
+    
 
     pico_button_init();
     sleep_ms(30);
@@ -67,21 +71,31 @@ int main() {
         }
     }
     else {
+        
+        DisplayInit();
+        TouchInit();
+
         FATFS fs;
         FRESULT fr;
-        DisplayInit();
-        layer l={.x=0,.y=0,.w=240,.h=280};
-
         fr = f_mount(&fs, "", 1);
         hard_assert(fr == FR_OK);
-        load_img("1.res",&l);
-        load_buf(&l);
-        
+
+        node *win=NULL;
+        create_layer(&win,0,0,240,280,"1.res",0);
+        //TouchTestToFile();
+        uint16_t x, y;
         while (true) {
             sleep_ms(10);
+            if (TouchRead(&x, &y)) {
+            // Простой маркер 5x5 точек
+            fill_rect((x < 5) ? 0 : x - 2,
+                      (y < 5) ? 0 : y - 2,
+                      5, 5, 0xF800);
+        }
             if(gpio_get(PIN_BUT2) == 0)
-            load_img("2.res",&l);
-            load_buf(&l);
+            create_layer(&win,0,0,240,280,"2.res",0);
+            if(gpio_get(PIN_BUT3) == 0)
+            pop_node(&win);
         }
     }
 }

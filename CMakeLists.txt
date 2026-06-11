@@ -50,7 +50,7 @@ add_executable(blink
 pico_enable_stdio_usb(blink 1)
 pico_enable_stdio_uart(blink 0)
 # pull in common dependencies
-target_link_libraries(blink pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync)
+target_link_libraries(blink pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync hardware_i2c)
 target_include_directories(blink PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/hdw
