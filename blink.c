@@ -82,6 +82,8 @@ int main() {
 
         node *win=NULL;
         create_layer(&win,0,0,240,280,"1.res",0);
+        add_sublayer(&win->l,100,100,50,50,"2.res",0);
+        add_sublayer(&win->l,150,150,50,50,"2.res",0);
         //TouchTestToFile();
         uint16_t x, y;
         while (true) {
@@ -92,8 +94,9 @@ int main() {
                       (y < 5) ? 0 : y - 2,
                       5, 5, 0xF800);
         }
-            if(gpio_get(PIN_BUT2) == 0)
+            if(gpio_get(PIN_BUT2) == 0){
             create_layer(&win,0,0,240,280,"2.res",0);
+            add_sublayer(&win->l,100,100,50,50,"1.res",0);}
             if(gpio_get(PIN_BUT3) == 0)
             pop_node(&win);
         }
