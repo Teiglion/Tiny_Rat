@@ -28,18 +28,18 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(blink C CXX ASM)
+project(automaton_core C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(blink
-    blink.c
-    usb_descriptors.c
+add_executable(automaton_core
+    sfw/automaton_core.c
+    sfw/usb_descriptors.c
+    sfw/layers.c
     hdw/disp_driver.c
-    layers.c
     hdw/sd_driver.c
     hdw/FatFS/ff.c
     hdw/FatFS/diskio.c
@@ -47,17 +47,18 @@ add_executable(blink
     hdw/FatFS/fattime.c
     hdw/msc_disk.c
     )
-pico_enable_stdio_usb(blink 1)
-pico_enable_stdio_uart(blink 0)
+pico_enable_stdio_usb(automaton_core 1)
+pico_enable_stdio_uart(automaton_core 0)
 # pull in common dependencies
-target_link_libraries(blink pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync hardware_i2c)
-target_include_directories(blink PRIVATE
+target_link_libraries(automaton_core pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync hardware_i2c)
+target_include_directories(automaton_core PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/sfw
     ${CMAKE_CURRENT_LIST_DIR}/hdw
     ${CMAKE_CURRENT_LIST_DIR}/hdw/FatFS
 )
 if (PICO_CYW43_SUPPORTED)
-    target_link_libraries(blink pico_cyw43_arch_none)
+    target_link_libraries(automaton_core pico_cyw43_arch_none)
 endif()
 
 # add url via pico_set_program_url
