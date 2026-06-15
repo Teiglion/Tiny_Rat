@@ -116,6 +116,20 @@ void pop_node(node **list)
     build_with_res(*list);  
 }
 
+void collapse_list(node **list)
+{
+    if(!list || !*list)return;
+    while ((*list)->prev)
+    {
+        node *temp=(*list)->prev;
+        if((*list)->l.res_name)free((*list)->l.res_name);
+        if((*list)->l.sublayers)free_sub(&(*list)->l.sublayers);
+        free(*list);
+        *list=temp; 
+    }
+    build_with_res(*list);
+}
+
 void add_sublayer(layer *list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint16_t in_h, const char *in_res_name, uint16_t in_color)
 {
     if(!list)return;

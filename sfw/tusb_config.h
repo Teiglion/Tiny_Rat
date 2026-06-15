@@ -9,9 +9,7 @@ extern "C" {
 //--------------------------------------------------------------------
 
 #define CFG_TUSB_MCU             OPT_MCU_RP2040
-#ifdef CFG_TUSB_DEBUG
-#define CFG_TUSB_DEBUG           2
-#endif
+
 
 
 #define CFG_TUD_ENABLED          1

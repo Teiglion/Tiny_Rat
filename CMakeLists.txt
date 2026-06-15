@@ -40,6 +40,7 @@ add_executable(automaton_core
     sfw/usb_descriptors.c
     sfw/layers.c
     hdw/disp_driver.c
+    hdw/touch_driver.c
     hdw/sd_driver.c
     hdw/FatFS/ff.c
     hdw/FatFS/diskio.c
@@ -47,8 +48,6 @@ add_executable(automaton_core
     hdw/FatFS/fattime.c
     hdw/msc_disk.c
     )
-pico_enable_stdio_usb(automaton_core 1)
-pico_enable_stdio_uart(automaton_core 0)
 # pull in common dependencies
 target_link_libraries(automaton_core pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync hardware_i2c)
 target_include_directories(automaton_core PRIVATE

@@ -3,6 +3,7 @@
 #include "hardware/spi.h"
 #include "tusb.h"
 #include "hdw/disp_driver.h"
+#include "hdw/touch_driver.h"
 #include "hdw/sd_driver.h"
 #include "hdw/FatFS/ff.h"
 #include "layers.h"
@@ -51,8 +52,6 @@ int main() {
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
 
-    
-
     pico_button_init();
     sleep_ms(30);
 
@@ -60,7 +59,6 @@ int main() {
     set_mode_leds(usb_disk_mode);
 
     SDInit();
-
     if (usb_disk_mode)
     {
         sleep_ms(100);
@@ -81,24 +79,21 @@ int main() {
         hard_assert(fr == FR_OK);
 
         node *win=NULL;
-        create_layer(&win,0,0,240,280,"1.res",0);
-        add_sublayer(&win->l,100,100,50,50,"2.res",0);
-        add_sublayer(&win->l,150,150,50,50,"2.res",0);
-        //TouchTestToFile();
+        create_layer(&win,0,0,240,280,"/sys/res/11.res",0);
+
         uint16_t x, y;
-        while (true) {
-            sleep_ms(10);
-            if (TouchRead(&x, &y)) {
-            // Простой маркер 5x5 точек
-            fill_rect((x < 5) ? 0 : x - 2,
-                      (y < 5) ? 0 : y - 2,
-                      5, 5, 0xF800);
-        }
-            if(gpio_get(PIN_BUT2) == 0){
-            create_layer(&win,0,0,240,280,"2.res",0);
-            add_sublayer(&win->l,100,100,50,50,"1.res",0);}
-            if(gpio_get(PIN_BUT3) == 0)
-            pop_node(&win);
+        while (true) 
+        {
+            sleep_ms(1);
+            if (TouchRead(&x, &y)) fill_rect(x, y, 3, 3, 0xF800);
+            if(gpio_get(PIN_BUT2) == 0)pop_node(&win);
+            if(gpio_get(PIN_BUT3) == 0)collapse_list(&win);
+            if(gpio_get(PIN_BUT4) == 0)
+            {
+                create_layer(&win,0,0,240,280,"2.res",0);
+                add_sublayer(&win->l,100,100,50,50,"1.res",0);
+            }
+            
         }
     }
 }
