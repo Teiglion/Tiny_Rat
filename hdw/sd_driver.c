@@ -5,6 +5,7 @@ static void sd_deselect(){gpio_put(SD_CS,1);}
 
 bool sd_initialized = false;
 bool sd_is_sdhc = false;
+static uint32_t sd_sector_count_cached = 0;
 
 void sd_send(tx_param *pkg)
 {
@@ -169,8 +170,13 @@ void SDInit(void)
 bool sd_sector_count(uint32_t *sector_count)
 {
     if(!sector_count)return false;
-    tx_param tx_pkg;
-    rx_param rx_pkg;
+    if (sd_initialized && sd_sector_count_cached != 0) 
+    {
+        *sector_count = sd_sector_count_cached;
+        return true;
+    }
+    tx_param tx_pkg={0};
+    rx_param rx_pkg={0};
 
     tx_pkg.selected=0;
     tx_pkg.cmd=9;
@@ -183,6 +189,7 @@ bool sd_sector_count(uint32_t *sector_count)
     uint8_t r;
     rx_pkg.data_buf=dbuf;
     rx_pkg.data_len=16;
+    rx_pkg.wait_limit=10000;
     rx_pkg.expected_r1=0x00;
     rx_pkg.resp_buf=&r;
     rx_pkg.resp_len=1;
@@ -195,6 +202,7 @@ bool sd_sector_count(uint32_t *sector_count)
     
     uint32_t result = ((uint32_t)(dbuf[7] & 0x3F) << 16)| ((uint32_t)dbuf[8] << 8) | dbuf[9];
     *sector_count=(result+1)*1024;
+    sd_sector_count_cached=(result+1)*1024;
     return true;
 }
 

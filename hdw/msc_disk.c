@@ -3,10 +3,9 @@
 #include "hdw/sd_driver.h"
 
 #define MSC_BLOCK_SIZE       512
-#define EXPOSED_BLOCK_COUNT  65536u  // 32 МБ
 
-void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8],
-                        uint8_t product_id[16], uint8_t product_rev[4])
+
+void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8],uint8_t product_id[16], uint8_t product_rev[4])
 {
     (void) lun;
 
@@ -22,10 +21,15 @@ void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8],
 bool tud_msc_test_unit_ready_cb(uint8_t lun)
 {
     (void) lun;
-    if (!sd_initialized) {
-        tud_msc_set_sense(lun, SCSI_SENSE_NOT_READY, 0x3A, 0x00);
-        return false;
+    if (!sd_initialized) 
+    {
+        SDInit();
+        if (!sd_initialized) {
+            tud_msc_set_sense(lun, SCSI_SENSE_NOT_READY, 0x3A, 0x00);
+            return false;
+        }
     }
+
     return true;
 }
 
@@ -38,12 +42,16 @@ bool tud_msc_is_writable_cb(uint8_t lun)
 void tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_size)
 {
     (void) lun;
-    *block_size  = MSC_BLOCK_SIZE;
-    *block_count = EXPOSED_BLOCK_COUNT;
+
+    *block_size = MSC_BLOCK_SIZE;
+
+    uint32_t cnt = 0;
+    if (!sd_sector_count(&cnt)) cnt = 0;
+
+    *block_count = cnt;
 }
 
-int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
-                          void* buffer, uint32_t bufsize)
+int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,void* buffer, uint32_t bufsize)
 {
     (void) lun;
 
@@ -56,7 +64,15 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
 
     uint32_t blocks = bufsize / MSC_BLOCK_SIZE;
 
-    if (lba + blocks > EXPOSED_BLOCK_COUNT) {
+    uint32_t total;
+    if (!sd_sector_count(&total)) 
+    {
+     tud_msc_set_sense(lun, SCSI_SENSE_NOT_READY, 0x3A, 0x00);
+     return -1;
+    }
+
+    if (lba + blocks > total) 
+    {
         tud_msc_set_sense(lun, SCSI_SENSE_ILLEGAL_REQUEST, 0x21, 0x00);
         return -1;
     }
@@ -73,8 +89,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
     return (int32_t) bufsize;
 }
 
-int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
-                           uint8_t* buffer, uint32_t bufsize)
+int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,uint8_t* buffer, uint32_t bufsize)
 {
     (void) lun;
 
@@ -87,7 +102,15 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
 
     uint32_t blocks = bufsize / MSC_BLOCK_SIZE;
 
-    if (lba + blocks > EXPOSED_BLOCK_COUNT) {
+    uint32_t total;
+    if (!sd_sector_count(&total)) 
+    {
+     tud_msc_set_sense(lun, SCSI_SENSE_NOT_READY, 0x3A, 0x00);
+     return -1;
+    }
+
+    if (lba + blocks > total) 
+    {
         tud_msc_set_sense(lun, SCSI_SENSE_ILLEGAL_REQUEST, 0x21, 0x00);
         return -1;
     }
@@ -116,8 +139,7 @@ bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, boo
     return true;
 }
 
-int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16],
-                        void* buffer, uint16_t bufsize)
+int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize)
 {
     (void) bufsize;
 

@@ -115,6 +115,11 @@ DRESULT disk_ioctl (
     case CTRL_SYNC:
         return RES_OK;
 
+	case GET_SECTOR_COUNT:
+    	if (buff == NULL) return RES_PARERR;
+    	if (!sd_sector_count((uint32_t *)buff)) return RES_ERROR;
+    	return RES_OK;
+
     case GET_SECTOR_SIZE:
         if (buff == NULL) return RES_PARERR;
         *(WORD*)buff = 512;

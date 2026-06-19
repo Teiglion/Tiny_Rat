@@ -79,7 +79,7 @@ int main() {
         hard_assert(fr == FR_OK);
 
         node *win=NULL;
-        create_layer(&win,0,0,240,280,"/sys/res/11.res",0);
+        create_layer(&win,0,0,240,280,"11.res",0);
 
         uint16_t x, y;
         while (true) 
