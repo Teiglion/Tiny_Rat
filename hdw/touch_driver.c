@@ -36,21 +36,15 @@ static bool touch_write_regs(uint8_t reg, uint8_t *buf, size_t len)
     return ret == (int)(len+1);
 }
 
-bool TouchRead(uint16_t *x, uint16_t *y)
+bool TouchRead(uint8_t *data, uint16_t *x, uint16_t *y)
 {
-    if (!x || !y) return false;
+    if (!data || !x || !y) return false;
 
-    if (gpio_get(PIN_TOUCH_INT) != 0) {
-        return false;
-    }
+    if (gpio_get(PIN_TOUCH_INT) != 0) return false;
     
-    uint8_t data[6];
-    if (!touch_read_regs(0x01, data, 6)) {
-        return false;
-    }
+    if (!touch_read_regs(0x01, data, 6))return false;
 
-    uint8_t points = data[1];
-    if (points == 0) return false;
+    if (data[1] == 0 && data[0] == 0x00) return false;
 
     uint16_t tx = ((data[2] & 0x0F) << 8) | data[3];
     uint16_t ty = ((data[4] & 0x0F) << 8) | data[5];

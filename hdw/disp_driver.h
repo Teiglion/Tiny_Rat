@@ -34,7 +34,4 @@ void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
-void TouchInit(void);
-bool TouchRead(uint16_t *x, uint16_t *y);
-
 #endif

@@ -14,14 +14,14 @@
 #define PIN_TOUCH_INT      26
 #define PIN_TOUCH_RST      27
 
-#define LCD_WIDTH        240
-#define LCD_HEIGHT       280
+#define LCD_WIDTH    240
+#define LCD_HEIGHT   280
 #define TOUCH_X_MIN  10
 #define TOUCH_X_MAX  229
-#define TOUCH_Y_MIN  25
-#define TOUCH_Y_MAX  269
+#define TOUCH_Y_MIN  30
+#define TOUCH_Y_MAX  259
 
 void TouchInit(void);
-bool TouchRead(uint16_t *x, uint16_t *y);
+bool TouchRead(uint8_t *data, uint16_t *x, uint16_t *y);
 
 #endif
