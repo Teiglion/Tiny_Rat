@@ -90,6 +90,7 @@ void DisplayInit(void)
     lcd_write_cmd(0x21);
     lcd_write_cmd(0x13);
     lcd_write_cmd(0x29); 
+    fill_rect(0,0,240,280,0x0000);
     sleep_ms(20);
     gpio_put(PIN_LCD_BK,1);
 }

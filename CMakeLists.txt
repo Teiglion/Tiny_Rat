@@ -41,6 +41,10 @@ add_executable(automaton_core
     sfw/layers.c
     sfw/app_core.c
     sfw/events.c
+    sfw/usb_mode.c
+    sfw/scenaries.c
+    sfw/text.c
+    sfw/hid_inject.c
     hdw/disp_driver.c
     hdw/touch_driver.c
     hdw/sd_driver.c

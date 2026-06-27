@@ -116,6 +116,16 @@ void pop_node(node **list)
     build_with_res(*list);  
 }
 
+void kill_node(node **list)
+{
+    if(!list || !*list)return;
+    node *temp=(*list)->prev;
+    if((*list)->l.res_name)free((*list)->l.res_name);
+    if((*list)->l.sublayers)free_sub(&(*list)->l.sublayers);
+    free(*list);
+    *list=temp; 
+}
+
 void collapse_list(node **list)
 {
     if(!list || !*list)return;

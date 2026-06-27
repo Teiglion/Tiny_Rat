@@ -9,7 +9,10 @@
 #include "hdw/sd_driver.h"
 #include "hdw/FatFS/ff.h"
 #include "sfw/events.h"
-#include "layers.h"
+#include "sfw/usb_mode.h"
+#include "sfw/hid_inject.h"
+#include "sfw/layers.h"
+#include "sfw/scenaries.h"
 
 typedef enum
 {
@@ -24,5 +27,7 @@ void normal_mode(void);
 void normal_tick(app_event *ev);
 void storage_mode(void);
 void storage_tick(app_event *ev);
+void inject_mode(void);
+void inject_tick(void);
 void enter_mode(mode m);
 #endif
