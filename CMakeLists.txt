@@ -42,7 +42,10 @@ add_executable(automaton_core
     sfw/app_core.c
     sfw/events.c
     sfw/usb_mode.c
-    sfw/scenaries.c
+    sfw/apps/launcher_app.c
+    sfw/apps/scen_app.c
+    sfw/apps/disk_app.c
+    sfw/apps/inject_app.c
     sfw/text.c
     sfw/hid_inject.c
     hdw/disp_driver.c
@@ -59,6 +62,7 @@ target_link_libraries(automaton_core pico_stdlib tinyusb_device hardware_spi har
 target_include_directories(automaton_core PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/sfw
+    ${CMAKE_CURRENT_LIST_DIR}/sfw/apps
     ${CMAKE_CURRENT_LIST_DIR}/hdw
     ${CMAKE_CURRENT_LIST_DIR}/hdw/FatFS
 )

@@ -12,22 +12,39 @@
 #include "sfw/usb_mode.h"
 #include "sfw/hid_inject.h"
 #include "sfw/layers.h"
-#include "sfw/scenaries.h"
 
 typedef enum
 {
-    NORMAL,
+    UI,
     STORAGE,
     INJECT
 }mode;
 
+typedef struct app app;
+typedef void (*enter_fn)(app *self);
+typedef void (*event_fn)(app *self, const app_event *ev);
+typedef void (*tick_fn)(app *self);
+typedef void (*exit_fn)(app *self);
+
+struct app
+{
+    const char *name;
+    enter_fn enter;
+    event_fn on_event;
+    tick_fn tick;
+    exit_fn exit;
+    void *ctx;
+};
+
+int pico_init(void);
 void SystemInit(void);
 void system_loop(void);
-void normal_mode(void);
-void normal_tick(app_event *ev);
-void storage_mode(void);
-void storage_tick(app_event *ev);
-void inject_mode(void);
-void inject_tick(void);
-void enter_mode(mode m);
+node **ui_root(void);
+mode get_mode(void);
+void set_mode(mode M);
+app *app_current(void);
+void app_open(app *a);
+void enter_mode(mode M);
+void leave_mode(mode M);
+
 #endif

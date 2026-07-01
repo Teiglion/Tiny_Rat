@@ -1,14 +1,93 @@
 #include "app_core.h"
+#include "sfw/apps/launcher_app.h"
+#include "sfw/apps/scen_app.h"
+#include "sfw/apps/disk_app.h"
+#include "sfw/apps/inject_app.h"
 
 static FATFS fs;
 static node *win = NULL;
-static mode MODE;
-static mode LAST_MODE;
-static bool inject_started;
-static bool inject_done;
-static bool busy;
+static bool fs_mounted = false;
+static bool usb_ready = false;
+static mode MODE = UI;
+static app *current_app = NULL;
+static bool storage_exit_pending = false;
 
-int pico_init(void) {
+node **ui_root(void){return &win;}
+mode get_mode(void){return MODE;}
+app *app_current(void){return current_app;}
+
+void app_open(app *a)
+{
+    if (!a) return;
+
+    if (current_app && current_app->exit) current_app->exit(current_app);
+
+    current_app = a;
+
+    if (current_app->enter) current_app->enter(current_app);
+}
+
+void set_mode(mode M)
+{
+    if (M == MODE) return;
+    leave_mode(MODE);
+    MODE = M;
+    enter_mode(MODE);
+}
+
+void enter_mode(mode M)
+{
+    switch (M)
+    {
+        case UI:
+            if (usb_msc_state() == MSC_HIDDEN && !fs_mounted)
+            {
+                FRESULT fr = f_mount(&fs, "", 1);
+                hard_assert(fr == FR_OK);
+                fs_mounted = true;
+            }
+
+            app_open(&launcher_app);
+            break;
+
+        case STORAGE:
+            if (fs_mounted)
+            {
+               f_mount(NULL, "", 1);
+               fs_mounted = false;
+            }
+            
+            storage_exit_pending = false;
+            usb_msc_show();
+            break;
+
+        case INJECT:
+            if (usb_msc_state() == MSC_HIDDEN && !fs_mounted)
+            {
+                FRESULT fr = f_mount(&fs, "", 1);
+                hard_assert(fr == FR_OK);
+                fs_mounted = true;
+            }
+
+            inject_start();
+            break;
+    }
+}
+
+void leave_mode(mode M)
+{
+    switch (M)
+    {
+        case UI: if (current_app && current_app->exit) current_app->exit(current_app);break;
+
+        case STORAGE: break;
+
+        case INJECT: inject_stop();break;
+    }
+}
+
+int pico_init(void)
+{
     gpio_init(PIN_LED_RED);
     gpio_set_dir(PIN_LED_RED, GPIO_OUT);
 
@@ -37,142 +116,78 @@ void SystemInit(void)
     sleep_ms(30);
 
     SDInit();
-    
     TouchInit();
-    MODE = 0;
-    LAST_MODE = 0;
     DisplayInit();
+
+    FRESULT fr = f_mount(&fs, "", 1);
+    hard_assert(fr == FR_OK);
+    fs_mounted = true;
+
+    tusb_init();
+    usb_ready = true;
+
+    create_layer(&win, 0, 0, 240, 280, "/sys/TR.res", 0);
+    sleep_ms(1500);
+    kill_node(&win);
+
+    MODE = UI;
+    current_app = NULL;
+    enter_mode(UI);
+}
+
+static void ui_loop(const app_event *ev)
+{
+    if (current_app && current_app->on_event && ev->type != NONE)current_app->on_event(current_app, ev);
+
+    if (current_app && current_app->tick)current_app->tick(current_app);
+}
+
+static void storage_loop(const app_event *ev)
+{
+    if (!storage_exit_pending && ev->type == TOUCH && ev->x >= 20 && ev->x <= 220 && ev->y >= 220 && ev->y <= 260)
+    {
+        usb_msc_hide();
+        storage_exit_pending = true;
+        return;
+    }
+    if (storage_exit_pending && usb_msc_state() == MSC_HIDDEN)
+    {
+        storage_exit_pending = false;
+        MODE = UI;
+        enter_mode(UI);
+    }
+}
+
+static void inject_loop(const app_event *ev)
+{
+    (void)ev;
+    inject_tick();
 }
 
 void system_loop(void)
 {
-    app_event ev={0};
-    LAST_MODE = MODE;
-    enter_mode(MODE);
-
-    while(true)
+    while (true)
     {
-        if(LAST_MODE != MODE)
+        if (usb_ready)tud_task();
+        usb_msc_poll();
+
+        if ((MODE == UI || MODE == INJECT) && usb_msc_state() == MSC_HIDDEN && !fs_mounted)
         {
-            LAST_MODE=MODE;
-            enter_mode(MODE);
+            FRESULT fr = f_mount(&fs, "", 1);
+            hard_assert(fr == FR_OK);
+            fs_mounted = true;
         }
-        if(MODE == NORMAL)normal_tick(&ev);
-        else if(MODE == STORAGE)storage_tick(&ev);
-        else if(MODE == INJECT)inject_tick();
-    }
-}
 
-void enter_mode(mode m)
-{
-    if(m == NORMAL)normal_mode();
-    else if(m == STORAGE)storage_mode();
-    else if(m == INJECT)inject_mode();
-}
+        app_event ev = {0};
+        event_handler(&ev);
 
-void normal_mode(void)
-{
-    FRESULT fr;
-    fr = f_mount(&fs, "", 1);
-    hard_assert(fr == FR_OK);
-    create_layer(&win,0,0,240,280,"/sys/TR.res",0);
-    sleep_ms(1500);
-    kill_node(&win);
-    create_layer(&win,0,0,240,280,"/sys/11.res",0);
-    add_sublayer(&win->l,40,20,66,66,"/apps/disk_app/disk_app.res",0);
-    add_sublayer(&win->l,134,20,66,66,"/apps/scen_app/scen_app.res",0);
-    busy = false;
-}
+        switch (MODE)
+        {
+            case UI: ui_loop(&ev);break;
 
-void normal_tick(app_event *ev)
-{
-    event_handler(ev);
-    if (ev->type != NONE) fill_rect(ev->x, ev->y, 3, 3, 0xF800);
+            case STORAGE: storage_loop(&ev);break;
 
-    if(ev->type == TOUCH && ev->x >= 40 && ev->x <= 106 && ev->y >= 20 && ev->y <= 86 && !busy)
-    {
-        busy = true;
-        create_layer(&win,0,0,240,280,"/apps/disk_app/storage_mode.res",0);
-        MODE = STORAGE;
-    }
-
-    if(ev->type == TOUCH && ev->x >= 134 && ev->x <= 200 && ev->y >= 20 && ev->y <= 86 && !busy)
-    {
-        busy = true;
-        //create_layer(&win,0,0,240,280,"/apps/scen_app/sc.res",0);
-        create_layer(&win,0,0,240,280,0,0xFFFF);
-        print_scens("/apps/scen_app/scripts");
-    }
-
-    if (ev->type == BUT1)
-    {
-        create_layer(&win,0,0,240,280,"/apps/inject_app/inj.res",0);
-        MODE = INJECT;
-    } 
-        
-    if (ev->type == SWIPE_RIGHT)
-    {
-        busy = false;
-        pop_node(&win);
-    }
-
-    if (ev->type == BUT3)
-    {
-        busy = false;
-        collapse_list(&win);
-    }
-
-    if(ev->type == BUT4)
-    {
-        busy = true;
-        create_layer(&win,0,0,240,280,"2.res",0);
-    }
-}
-
-void storage_mode(void)
-{   
-    f_mount(NULL, "", 1);
-    usb = USB_MSC;
-    tusb_init();
-}
-
-void storage_tick(app_event *ev)
-{
-    tud_task();
-    event_handler(ev);
-    if(ev->type == TOUCH && ev->x >= 20 && ev->x <= 220 && ev->y >= 220 && ev->y <= 260)
-    {
-        watchdog_reboot(0,0,0);
-    }
-}
-
-void inject_mode(void)
-{
-    usb = USB_HID;
-    inject_started = false;
-    inject_done = false;
-    tusb_init();
-}
-
-void inject_tick(void)
-{
-    tud_task();
-    if (!tud_mounted()) return;
-    if (inject_done) return;
-    if (!inject_started) 
-    {
-        inject_started = true;
-        hid_send_key(KEYBOARD_MODIFIER_LEFTGUI,HID_KEY_R);
-        sleep_ms(500);
-        hid_send_text("cmd");
-        hid_send_key(0, HID_KEY_ENTER);
-        sleep_ms(1500);
-        hid_send_text("ssh teiglion@192.168.1.11");
-        hid_send_key(0,HID_KEY_ENTER);
-        sleep_ms(1500);
-        hid_send_text("upgrad3");
-        hid_send_key(0,HID_KEY_ENTER);
-        inject_done = true;
-        watchdog_reboot(0,0,0);
+            case INJECT: inject_loop(&ev);break;
+        }
     }
 }
