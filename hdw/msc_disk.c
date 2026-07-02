@@ -29,31 +29,24 @@ static bool msc_backend_ready(uint8_t lun)
 
 bool tud_msc_test_unit_ready_cb(uint8_t lun)
 {
-    switch (usb_msc_state())
+    if (!usb_msc_is_enabled())
     {
-    case MSC_HIDDEN:
-    case MSC_DISAPPEARING:
         msc_set_no_medium(lun);
         return false;
-
-    case MSC_APPEARING:
-        if (!msc_backend_ready(lun))
-            return false;
-
-        if (usb_msc_take_attention())
-        {
-            msc_set_medium_changed(lun);
-            return false;
-        }
-
-        return true;
-
-    case MSC_READY:
-        return msc_backend_ready(lun);
     }
 
-    msc_set_no_medium(lun);
-    return false;
+    if (!msc_backend_ready(lun))
+    {
+        return false;
+    }
+
+    if (usb_msc_should_fail_tur_once())
+    {
+        msc_set_medium_changed(lun);
+        return false;
+    }
+
+    return true;
 }
 
 bool tud_msc_is_writable_cb(uint8_t lun)
@@ -71,7 +64,7 @@ void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_siz
 
     *block_size = MSC_BLOCK_SIZE;
 
-    if (!usb_msc_is_enabled() || !sd_initialized)
+    if (!usb_msc_is_ready() || !sd_initialized)
     {
         *block_count = 0;
         return;
@@ -187,29 +180,25 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
         buf[0] = 0x70;
         buf[7] = 10;
 
-        switch (usb_msc_state())
+        if (!usb_msc_is_enabled())
         {
-        case MSC_APPEARING:
-            buf[2]  = SCSI_SENSE_UNIT_ATTENTION;
-            buf[12] = 0x28;
-            buf[13] = 0x00;
-            break;
-
-        case MSC_HIDDEN:
-        case MSC_DISAPPEARING:
-            buf[2]  = SCSI_SENSE_NOT_READY;
+            buf[2] = SCSI_SENSE_NOT_READY;
             buf[12] = 0x3A;
             buf[13] = 0x00;
-            break;
-
-        case MSC_READY:
-        default:
-            buf[2]  = 0x00;
-            buf[12] = 0x00;
-            buf[13] = 0x00;
-            break;
+            return 18;
         }
 
+        if (usb_msc_should_report_sense_once())
+        {
+            buf[2] = SCSI_SENSE_UNIT_ATTENTION;
+            buf[12] = 0x28;
+            buf[13] = 0x00;
+            return 18;
+        }
+
+        buf[2] = 0x00;
+        buf[12] = 0x00;
+        buf[13] = 0x00;
         return 18;
     }
 

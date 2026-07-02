@@ -2,88 +2,25 @@
 #include "sfw/apps/launcher_app.h"
 #include "sfw/apps/scen_app.h"
 #include "sfw/apps/disk_app.h"
-#include "sfw/apps/inject_app.h"
 
 static FATFS fs;
 static node *win = NULL;
 static bool fs_mounted = false;
 static bool usb_ready = false;
-static mode MODE = UI;
 static app *current_app = NULL;
-static bool storage_exit_pending = false;
+static bool storage_active;
+static bool storage_exit_pending;
 
 node **ui_root(void){return &win;}
-mode get_mode(void){return MODE;}
 app *app_current(void){return current_app;}
+bool storage_is_active(void){return storage_active;}
 
 void app_open(app *a)
 {
     if (!a) return;
-
     if (current_app && current_app->exit) current_app->exit(current_app);
-
     current_app = a;
-
     if (current_app->enter) current_app->enter(current_app);
-}
-
-void set_mode(mode M)
-{
-    if (M == MODE) return;
-    leave_mode(MODE);
-    MODE = M;
-    enter_mode(MODE);
-}
-
-void enter_mode(mode M)
-{
-    switch (M)
-    {
-        case UI:
-            if (usb_msc_state() == MSC_HIDDEN && !fs_mounted)
-            {
-                FRESULT fr = f_mount(&fs, "", 1);
-                hard_assert(fr == FR_OK);
-                fs_mounted = true;
-            }
-
-            app_open(&launcher_app);
-            break;
-
-        case STORAGE:
-            if (fs_mounted)
-            {
-               f_mount(NULL, "", 1);
-               fs_mounted = false;
-            }
-            
-            storage_exit_pending = false;
-            usb_msc_show();
-            break;
-
-        case INJECT:
-            if (usb_msc_state() == MSC_HIDDEN && !fs_mounted)
-            {
-                FRESULT fr = f_mount(&fs, "", 1);
-                hard_assert(fr == FR_OK);
-                fs_mounted = true;
-            }
-
-            inject_start();
-            break;
-    }
-}
-
-void leave_mode(mode M)
-{
-    switch (M)
-    {
-        case UI: if (current_app && current_app->exit) current_app->exit(current_app);break;
-
-        case STORAGE: break;
-
-        case INJECT: inject_stop();break;
-    }
 }
 
 int pico_init(void)
@@ -130,15 +67,14 @@ void SystemInit(void)
     sleep_ms(1500);
     kill_node(&win);
 
-    MODE = UI;
-    current_app = NULL;
-    enter_mode(UI);
+    storage_active = false;
+    storage_exit_pending = false;
+    app_open(&launcher_app);
 }
 
 static void ui_loop(const app_event *ev)
 {
     if (current_app && current_app->on_event && ev->type != NONE)current_app->on_event(current_app, ev);
-
     if (current_app && current_app->tick)current_app->tick(current_app);
 }
 
@@ -146,22 +82,21 @@ static void storage_loop(const app_event *ev)
 {
     if (!storage_exit_pending && ev->type == TOUCH && ev->x >= 20 && ev->x <= 220 && ev->y >= 220 && ev->y <= 260)
     {
-        usb_msc_hide();
-        storage_exit_pending = true;
+        storage_end_request();
         return;
     }
     if (storage_exit_pending && usb_msc_state() == MSC_HIDDEN)
     {
+        if (!fs_mounted)
+        {
+            FRESULT fr = f_mount(&fs, "", 1);
+            hard_assert(fr == FR_OK);
+            fs_mounted = true;
+        }
         storage_exit_pending = false;
-        MODE = UI;
-        enter_mode(UI);
+        storage_active = false;
+        app_open(&launcher_app);
     }
-}
-
-static void inject_loop(const app_event *ev)
-{
-    (void)ev;
-    inject_tick();
 }
 
 void system_loop(void)
@@ -169,9 +104,8 @@ void system_loop(void)
     while (true)
     {
         if (usb_ready)tud_task();
-        usb_msc_poll();
 
-        if ((MODE == UI || MODE == INJECT) && usb_msc_state() == MSC_HIDDEN && !fs_mounted)
+        if (!storage_active && usb_msc_state() == MSC_HIDDEN && !fs_mounted)
         {
             FRESULT fr = f_mount(&fs, "", 1);
             hard_assert(fr == FR_OK);
@@ -181,13 +115,30 @@ void system_loop(void)
         app_event ev = {0};
         event_handler(&ev);
 
-        switch (MODE)
-        {
-            case UI: ui_loop(&ev);break;
-
-            case STORAGE: storage_loop(&ev);break;
-
-            case INJECT: inject_loop(&ev);break;
-        }
+        if(storage_active)storage_loop(&ev);
+        else ui_loop(&ev);
     }
+}
+
+void storage_begin(void)
+{
+    if (storage_active) return;
+
+    if (fs_mounted)
+    {
+        f_mount(NULL, "", 1);
+        fs_mounted = false;
+    }
+
+    storage_exit_pending = false;
+    storage_active = true;
+    usb_msc_show();
+}
+
+void storage_end_request(void)
+{
+    if (!storage_active) return;
+
+    usb_msc_hide();
+    storage_exit_pending = true;
 }

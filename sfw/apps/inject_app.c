@@ -1,6 +1,4 @@
 #include "inject_app.h"
-#include "sfw/apps/launcher_app.h"
-#include "sfw/apps/scen_app.h"
 
 typedef struct
 {
@@ -27,31 +25,62 @@ const char *inject_get_path(void)
     return inject_ctx_data.path;
 }
 
-void inject_start(void)
+static void inject_draw(void)
 {
-    inject_ctx_data.started = false;
-    inject_ctx_data.done = false;
+    node **root = ui_root();
+
+    if (*root) kill_node(root);
+    create_layer(root, 0, 0, 240, 280, "/apps/inject_app/inj.res", 0);
 }
 
-void inject_stop(void)
+static void inject_enter(app *self)
 {
-    inject_ctx_data.started = false;
-    inject_ctx_data.done = false;
+    inject_ctx *ctx = (inject_ctx *)self->ctx;
+
+    ctx->started = false;
+    ctx->done = false;
+    inject_draw();
 }
 
-void inject_tick(void)
+static void inject_on_event(app *self, const app_event *ev)
 {
+    (void)self;
+    (void)ev;
+}
+
+static void inject_tick_app(app *self)
+{
+    inject_ctx *ctx = (inject_ctx *)self->ctx;
+
     tud_task();
 
     if (!tud_mounted()) return;
-    if (inject_ctx_data.done) return;
-    if (inject_ctx_data.path[0] == '\0') return;
+    if (ctx->done) return;
+    if (ctx->path[0] == '\0') return;
 
-    if (!inject_ctx_data.started)
+    if (!ctx->started)
     {
-        inject_ctx_data.started = true;
-        run_scen(inject_ctx_data.path);
-        inject_ctx_data.done = true;
-        set_mode(UI);
+        ctx->started = true;
+        run_scen(ctx->path);
+        ctx->done = true;
+        app_open(&scen_app);
+        return;
     }
 }
+
+static void inject_exit(app *self)
+{
+    inject_ctx *ctx = (inject_ctx *)self->ctx;
+
+    ctx->started = false;
+    ctx->done = false;
+}
+
+app inject_app = {
+    .name = "inject",
+    .enter = inject_enter,
+    .on_event = inject_on_event,
+    .tick = inject_tick_app,
+    .exit = inject_exit,
+    .ctx = &inject_ctx_data
+};

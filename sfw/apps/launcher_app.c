@@ -50,8 +50,6 @@ static void launcher_on_event(app *self, const app_event *ev)
 
     if (ev->type == BUT1 && !ctx->busy)
     {
-        ctx->busy = true;
-        set_mode(INJECT);
         return;
     }
 

@@ -38,7 +38,7 @@ static void disk_tick(app *self)
     if (ctx->started) return;
 
     ctx->started = true;
-    set_mode(STORAGE);
+    storage_begin();
 }
 
 static void disk_exit(app *self)
