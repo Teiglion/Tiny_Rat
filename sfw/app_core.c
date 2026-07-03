@@ -1,29 +1,49 @@
 #include "app_core.h"
+#include "pico/stdlib.h"
+#include "tusb.h"
+#include "hdw/disp_driver.h"
+#include "hdw/sd_driver.h"
 #include "sfw/apps/launcher_app.h"
-#include "sfw/apps/scen_app.h"
-#include "sfw/apps/disk_app.h"
 
 static FATFS fs;
 static node *win = NULL;
 static bool fs_mounted = false;
-static bool usb_ready = false;
 static app *current_app = NULL;
-static bool storage_active;
-static bool storage_exit_pending;
+static app *prev_app = NULL;
 
+FATFS *fs_root(void){return &fs;}
+bool fs_root_is_mounted(void){return fs_mounted;}
 node **ui_root(void){return &win;}
 app *app_current(void){return current_app;}
-bool storage_is_active(void){return storage_active;}
+app *app_prev(void){return prev_app;}
 
 void app_open(app *a)
 {
     if (!a) return;
+    if (a == current_app) return;
+    prev_app = current_app;
     if (current_app && current_app->exit) current_app->exit(current_app);
     current_app = a;
     if (current_app->enter) current_app->enter(current_app);
 }
 
-int pico_init(void)
+bool fs_mount_root(void)
+{
+    if (fs_mounted)return true;
+    FRESULT fr = f_mount(&fs, "", 1);
+    if (fr != FR_OK)return false;
+    fs_mounted = true;
+    return true;
+}
+
+void fs_unmount_root(void)
+{
+    if (!fs_mounted)return;
+    f_mount(NULL, "", 1);
+    fs_mounted = false;
+}
+
+static void pico_init(void)
 {
     gpio_init(PIN_LED_RED);
     gpio_set_dir(PIN_LED_RED, GPIO_OUT);
@@ -42,103 +62,39 @@ int pico_init(void)
 
     gpio_init(PIN_BUT4);
     gpio_set_dir(PIN_BUT4, GPIO_IN);
-
-    return PICO_OK;
 }
 
 void SystemInit(void)
 {
-    int rc = pico_init();
-    hard_assert(rc == PICO_OK);
+    pico_init();
     sleep_ms(30);
 
     SDInit();
     TouchInit();
     DisplayInit();
 
-    FRESULT fr = f_mount(&fs, "", 1);
-    hard_assert(fr == FR_OK);
-    fs_mounted = true;
+    hard_assert(fs_mount_root());
 
     tusb_init();
-    usb_ready = true;
 
     create_layer(&win, 0, 0, 240, 280, "/sys/TR.res", 0);
     sleep_ms(1500);
     kill_node(&win);
 
-    storage_active = false;
-    storage_exit_pending = false;
     app_open(&launcher_app);
-}
-
-static void ui_loop(const app_event *ev)
-{
-    if (current_app && current_app->on_event && ev->type != NONE)current_app->on_event(current_app, ev);
-    if (current_app && current_app->tick)current_app->tick(current_app);
-}
-
-static void storage_loop(const app_event *ev)
-{
-    if (!storage_exit_pending && ev->type == TOUCH && ev->x >= 20 && ev->x <= 220 && ev->y >= 220 && ev->y <= 260)
-    {
-        storage_end_request();
-        return;
-    }
-    if (storage_exit_pending && usb_msc_state() == MSC_HIDDEN)
-    {
-        if (!fs_mounted)
-        {
-            FRESULT fr = f_mount(&fs, "", 1);
-            hard_assert(fr == FR_OK);
-            fs_mounted = true;
-        }
-        storage_exit_pending = false;
-        storage_active = false;
-        app_open(&launcher_app);
-    }
 }
 
 void system_loop(void)
 {
     while (true)
     {
-        if (usb_ready)tud_task();
-
-        if (!storage_active && usb_msc_state() == MSC_HIDDEN && !fs_mounted)
-        {
-            FRESULT fr = f_mount(&fs, "", 1);
-            hard_assert(fr == FR_OK);
-            fs_mounted = true;
-        }
+        tud_task();
 
         app_event ev = {0};
         event_handler(&ev);
 
-        if(storage_active)storage_loop(&ev);
-        else ui_loop(&ev);
+        if (current_app && current_app->on_event && ev.type != NONE)current_app->on_event(current_app, &ev);
+        if (current_app && current_app->tick)current_app->tick(current_app);
     }
 }
 
-void storage_begin(void)
-{
-    if (storage_active) return;
-
-    if (fs_mounted)
-    {
-        f_mount(NULL, "", 1);
-        fs_mounted = false;
-    }
-
-    storage_exit_pending = false;
-    storage_active = true;
-    usb_msc_show();
-}
-
-void storage_end_request(void)
-{
-    if (!storage_active) return;
-
-    usb_msc_hide();
-    storage_exit_pending = true;
-}

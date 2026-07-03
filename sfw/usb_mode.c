@@ -8,7 +8,7 @@ void usb_msc_show(void)
 {
     state = MSC_READY;
     fail_tur_once = true;
-    report_sense_once = true;
+    report_sense_once = true;   
 }
 
 void usb_msc_hide(void)
@@ -16,11 +16,6 @@ void usb_msc_hide(void)
     state = MSC_HIDDEN;
     fail_tur_once = false;
     report_sense_once = false;
-}
-
-bool usb_msc_is_enabled(void)
-{
-    return state == MSC_READY;
 }
 
 bool usb_msc_is_ready(void)

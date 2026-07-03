@@ -1,7 +1,6 @@
 #include <string.h>
 #include "tusb.h"
 #include "sd_driver.h"
-#include "FatFS/ff.h"
 #include "usb_mode.h"
 
 #define MSC_BLOCK_SIZE 512
@@ -29,7 +28,7 @@ static bool msc_backend_ready(uint8_t lun)
 
 bool tud_msc_test_unit_ready_cb(uint8_t lun)
 {
-    if (!usb_msc_is_enabled())
+    if (!usb_msc_is_ready())
     {
         msc_set_no_medium(lun);
         return false;
@@ -180,7 +179,7 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
         buf[0] = 0x70;
         buf[7] = 10;
 
-        if (!usb_msc_is_enabled())
+        if (!usb_msc_is_ready())
         {
             buf[2] = SCSI_SENSE_NOT_READY;
             buf[12] = 0x3A;
@@ -203,7 +202,7 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
     }
 
     default:
-        if (!usb_msc_is_enabled())
+        if (!usb_msc_is_ready())
         {
             msc_set_no_medium(lun);
             return -1;

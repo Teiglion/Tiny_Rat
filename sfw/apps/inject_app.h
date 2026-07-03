@@ -3,7 +3,6 @@
 
 #include <string.h>
 #include "app_core.h"
-#include "sfw/apps/scen_app.h"
 
 extern app inject_app;
 

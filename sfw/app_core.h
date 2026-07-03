@@ -1,16 +1,10 @@
 #ifndef APP_CORE_H
 #define APP_CORE_H
 
-#include "pico/stdlib.h"
-#include "hardware/spi.h"
-#include "tusb.h"
-#include "hdw/disp_driver.h"
-#include "hdw/sd_driver.h"
 #include "hdw/FatFS/ff.h"
 #include "sfw/events.h"
-#include "sfw/usb_mode.h"
-#include "sfw/hid_inject.h"
 #include "sfw/layers.h"
+
 
 typedef struct app app;
 typedef void (*enter_fn)(app *self);
@@ -30,11 +24,16 @@ struct app
 
 void SystemInit(void);
 void system_loop(void);
+
+FATFS *fs_root(void);
 node **ui_root(void);
+
 app *app_current(void);
+app *app_prev(void);
 void app_open(app *a);
-void storage_begin(void);
-void storage_end_request(void);
-bool storage_is_active(void);
+
+bool fs_mount_root(void);
+void fs_unmount_root(void);
+bool fs_root_is_mounted(void);
 
 #endif

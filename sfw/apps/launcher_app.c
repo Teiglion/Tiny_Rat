@@ -2,13 +2,6 @@
 #include "sfw/apps/scen_app.h"
 #include "sfw/apps/disk_app.h"
 
-typedef struct
-{
-    bool busy;
-} launcher_ctx;
-
-static launcher_ctx launcher_ctx_data = {0};
-
 static void launcher_draw(void)
 {
     node **root = ui_root();
@@ -22,40 +15,25 @@ static void launcher_draw(void)
 
 static void launcher_enter(app *self)
 {
-    launcher_ctx *ctx = (launcher_ctx *)self->ctx;
-
-    ctx->busy = false;
+    (void)self;
     launcher_draw();
 }
 
 static void launcher_on_event(app *self, const app_event *ev)
 {
-    launcher_ctx *ctx = (launcher_ctx *)self->ctx;
+    (void)self;
 
     if (!ev) return;
 
-    if (ev->type == TOUCH && ev->x >= 40 && ev->x <= 106 && ev->y >= 20 && ev->y <= 86 && !ctx->busy)
+    if (ev->type == TOUCH && ev->x >= 40 && ev->x <= 106 && ev->y >= 20 && ev->y <= 86)
     {
-        ctx->busy = true;
         app_open(&disk_app);
         return;
     }
 
-    if (ev->type == TOUCH && ev->x >= 134 && ev->x <= 200 && ev->y >= 20 && ev->y <= 86 && !ctx->busy)
+    if (ev->type == TOUCH && ev->x >= 134 && ev->x <= 200 && ev->y >= 20 && ev->y <= 86)
     {
-        ctx->busy = true;
         app_open(&scen_app);
-        return;
-    }
-
-    if (ev->type == BUT1 && !ctx->busy)
-    {
-        return;
-    }
-
-    if (ev->type == SWIPE_RIGHT)
-    {
-        ctx->busy = false;
         return;
     }
 }
@@ -67,8 +45,7 @@ static void launcher_tick(app *self)
 
 static void launcher_exit(app *self)
 {
-    launcher_ctx *ctx = (launcher_ctx *)self->ctx;
-    ctx->busy = false;
+    (void)self;
 }
 
 app launcher_app = {
@@ -77,5 +54,5 @@ app launcher_app = {
     .on_event = launcher_on_event,
     .tick = launcher_tick,
     .exit = launcher_exit,
-    .ctx = &launcher_ctx_data
+    .ctx = NULL
 };
