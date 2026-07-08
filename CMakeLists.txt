@@ -46,6 +46,9 @@ add_executable(automaton_core
     sfw/apps/scen_app.c
     sfw/apps/disk_app.c
     sfw/apps/inject_app.c
+    sfw/apps/invaders_app.c
+    sfw/apps/invaders_res.c
+    sfw/gfx/gfx.c
     sfw/text.c
     sfw/hid_inject.c
     hdw/disp_driver.c
@@ -63,6 +66,7 @@ target_include_directories(automaton_core PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/sfw
     ${CMAKE_CURRENT_LIST_DIR}/sfw/apps
+    ${CMAKE_CURRENT_LIST_DIR}/sfw/gfx
     ${CMAKE_CURRENT_LIST_DIR}/hdw
     ${CMAKE_CURRENT_LIST_DIR}/hdw/FatFS
 )

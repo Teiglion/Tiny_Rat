@@ -1,6 +1,7 @@
 #include "launcher_app.h"
 #include "sfw/apps/scen_app.h"
 #include "sfw/apps/disk_app.h"
+#include "sfw/apps/invaders_app.h"
 
 static void launcher_draw(void)
 {
@@ -11,6 +12,7 @@ static void launcher_draw(void)
     create_layer(root, 0, 0, 240, 280, "/sys/11.res", 0);
     add_sublayer(&(*root)->l, 40, 20, 66, 66, "/apps/disk_app/disk_app.res", 0);
     add_sublayer(&(*root)->l, 134, 20, 66, 66, "/apps/scen_app/scen_app.res", 0);
+    add_sublayer(&(*root)->l, 40, 114, 66, 66, "/apps/invaders_app/invaders_app.res", 0);
 }
 
 static void launcher_enter(app *self)
@@ -34,6 +36,12 @@ static void launcher_on_event(app *self, const app_event *ev)
     if (ev->type == TOUCH && ev->x >= 134 && ev->x <= 200 && ev->y >= 20 && ev->y <= 86)
     {
         app_open(&scen_app);
+        return;
+    }
+
+    if (ev->type == TOUCH && ev->x >= 40 && ev->x <= 106 && ev->y >= 114 && ev->y <= 180)
+    {
+        app_open(&invaders_app);
         return;
     }
 }

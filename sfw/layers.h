@@ -33,6 +33,7 @@ void add_sublayer(layer *list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint
 void push_node(node **list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint16_t in_h, const char *in_res_name, uint16_t in_color);
 void pop_node(node **list);
 void kill_node(node **list);
+void free_sub(node **list);
 void collapse_list(node **list);
 
 #endif

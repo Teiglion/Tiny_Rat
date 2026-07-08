@@ -89,7 +89,6 @@ void system_loop(void)
     while (true)
     {
         tud_task();
-
         app_event ev = {0};
         event_handler(&ev);
 

@@ -33,5 +33,6 @@ void set_window(uint16_t x0,uint16_t y0,uint16_t x1,uint16_t y1);
 void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void draw_buf_ex(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buf);
 
 #endif

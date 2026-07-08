@@ -13,8 +13,9 @@ void event_handler(app_event *ev)
         if(data[0] == 0x05)ev->type=TOUCH;
     }
 
-    if(gpio_get(PIN_BUT1) == 0)ev->type = BUT1;
-    if(gpio_get(PIN_BUT2) == 0)ev->type = BUT2;
-    if(gpio_get(PIN_BUT3) == 0)ev->type = BUT3;
-    if(gpio_get(PIN_BUT4) == 0)ev->type = BUT4;
+    if (gpio_get(PIN_BUT1) == 0) ev->type = BUT1;
+    else if (gpio_get(PIN_BUT2) == 0) ev->type = BUT2;
+    else if (gpio_get(PIN_BUT3) == 0) ev->type = BUT3;
+    else if (gpio_get(PIN_BUT4) == 0) ev->type = BUT4;
+
 }

@@ -190,3 +190,23 @@ void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     }
     display_deselect();
 }
+
+void draw_buf_ex(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buf)
+{
+    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
+    if(w==0 || h==0)return;
+    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
+    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
+    set_window(x,y,x+w-1,y+h-1);
+    display_select();
+    display_data_mode();
+    uint32_t total=(uint32_t)w*h*2,sent=0;
+    while(sent<total)
+    {
+        uint32_t chunk =total-sent;
+        if (chunk > 4096) chunk = 4096;
+        spi_write_blocking(LCD_SPI_PORT, buf + sent, chunk);
+        sent += chunk;
+    }
+    display_deselect();
+}
