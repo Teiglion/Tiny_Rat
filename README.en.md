@@ -179,3 +179,12 @@ Examples:
 - `KEY C+s` — open the “Save” dialog;
 - `KEY E` — press Enter;
 - `KEY A4` — close the Notepad window.
+
+## Resources
+
+To create your own resources, use `conv2fullscreen` and `conv2small` from the `extra` folder. These tools are used to convert full-screen images and smaller images respectively into the resource format used by the project (a sequential RGB565 pixel array).
+
+They accept `.jpg`, `.jpeg`, and `.png` input files.
+
+- **Usage:** run `./conv2small resource.png resource.res` in the command line.
+- **Important:** images should be prepared in advance and resized to `240x280` before conversion.
