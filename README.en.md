@@ -1,4 +1,5 @@
-# TinyRat
+<img width="1774" height="887" alt="TinyRat" src="https://github.com/user-attachments/assets/5cbf5522-1456-4b99-a7e1-0f2b17d5837b" />
+TinyRat
 
 > A first serious attempt to build a custom embedded platform on RP2040: with UI, applications, USB workflows, and file-based resources.
 
