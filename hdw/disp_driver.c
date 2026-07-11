@@ -1,16 +1,12 @@
 #include "disp_driver.h"
 
-#define FRAMEBUF_SIZE (LCD_WIDTH * LCD_HEIGHT * 2)
-
-
-
 uint8_t framebuf[FRAMEBUF_SIZE];
 static void display_select(){gpio_put(PIN_LCD_CS,0);}
 static void display_deselect(){gpio_put(PIN_LCD_CS,1);}
 static void display_cmd_mode(){gpio_put(PIN_LCD_DC,0);}
 static void display_data_mode(){gpio_put(PIN_LCD_DC,1);}
 
-void lcd_reset() {
+static void lcd_reset() {
     gpio_put(PIN_LCD_RST, 1);
     sleep_ms(20);
     gpio_put(PIN_LCD_RST, 0);
@@ -19,7 +15,7 @@ void lcd_reset() {
     sleep_ms(120);
 }
 
-void lcd_write_cmd(uint8_t cmd)
+static void lcd_write_cmd(uint8_t cmd)
 {
     display_select();
     display_cmd_mode();
@@ -27,7 +23,7 @@ void lcd_write_cmd(uint8_t cmd)
     display_deselect();
 }
 
-void lcd_write_data(uint8_t *data, size_t len)
+static void lcd_write_data(const uint8_t *data, size_t len)
 {
     display_select();
     display_data_mode();
@@ -35,7 +31,7 @@ void lcd_write_data(uint8_t *data, size_t len)
     display_deselect();
 }
 
-void lcd_write_cmd_data(uint8_t cmd,uint8_t *data, size_t len)
+static void lcd_write_cmd_data(uint8_t cmd,const uint8_t *data, size_t len)
 {
     display_select();
     display_cmd_mode();
@@ -118,12 +114,18 @@ void set_window(uint16_t x0,uint16_t y0,uint16_t x1,uint16_t y1)
     lcd_write_cmd(0x2C);
 }
 
+static bool clip_rect(uint16_t x, uint16_t y, uint16_t *w, uint16_t *h)
+{
+    if (x >= LCD_WIDTH || y >= LCD_HEIGHT) return false;
+    if (*w == 0 || *h == 0) return false;
+    if (x + *w > LCD_WIDTH)  *w = LCD_WIDTH - x;
+    if (y + *h > LCD_HEIGHT) *h = LCD_HEIGHT - y;
+    return true;
+}
+
 void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {
-    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
-    if(w==0 || h==0)return;
-    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
-    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
+    if (!clip_rect(x, y, &w, &h)) return;
     set_window(x,y,x+w-1,y+h-1);
     uint8_t buf[128];
     for(int i=0;i<128;i+=2)
@@ -146,10 +148,7 @@ void fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 
 void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 {
-    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
-    if(w==0 || h==0)return;
-    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
-    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
+    if (!clip_rect(x, y, &w, &h)) return;
     set_window(x,y,x+w-1,y+h-1);
     display_select();
     display_data_mode();
@@ -171,42 +170,28 @@ void stream_img(FIL *f,uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     display_deselect();
 }
 
-void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+static void draw_raw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buf)
 {
-    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
-    if(w==0 || h==0)return;
-    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
-    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
-    set_window(x,y,x+w-1,y+h-1);
-    display_select();
-    display_data_mode();
-    uint32_t total=(uint32_t)w*h*2,sent=0;
-    while(sent<total)
-    {
-        uint32_t chunk =total-sent;
-        if (chunk > 4096) chunk = 4096;
-        spi_write_blocking(LCD_SPI_PORT, framebuf + sent, chunk);
-        sent += chunk;
-    }
-    display_deselect();
-}
+    if (!clip_rect(x, y, &w, &h)) return;
 
-void draw_buf_ex(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buf)
-{
-    if(x>=LCD_WIDTH || y>=LCD_HEIGHT)return;
-    if(w==0 || h==0)return;
-    if(x+w>LCD_WIDTH)w=LCD_WIDTH-x;
-    if(y+h>LCD_HEIGHT)h=LCD_HEIGHT-y;
-    set_window(x,y,x+w-1,y+h-1);
+    set_window(x, y, x + w - 1, y + h - 1);
     display_select();
     display_data_mode();
-    uint32_t total=(uint32_t)w*h*2,sent=0;
-    while(sent<total)
+
+    uint32_t total = (uint32_t)w * h * 2;
+    uint32_t sent = 0;
+
+    while (sent < total)
     {
-        uint32_t chunk =total-sent;
+        uint32_t chunk = total - sent;
         if (chunk > 4096) chunk = 4096;
         spi_write_blocking(LCD_SPI_PORT, buf + sent, chunk);
         sent += chunk;
     }
+
     display_deselect();
 }
+
+void draw_buf(uint16_t x, uint16_t y, uint16_t w, uint16_t h){draw_raw_buf(x, y, w, h, framebuf);}
+
+void draw_buf_ex(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buf){draw_raw_buf(x, y, w, h, buf);}

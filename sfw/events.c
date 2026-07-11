@@ -2,6 +2,7 @@
 
 void event_handler(app_event *ev)
 {
+    if (!ev) return;
     uint8_t data[6];
     if(!TouchRead(data, &(ev->x), &(ev->y)) || (data[1] == 0 && data[0] == 0x00))ev->type=NONE;
     else

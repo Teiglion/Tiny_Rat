@@ -21,5 +21,7 @@ extern const uint16_t octopus_a[];
 extern const uint16_t octopus_b[];
 extern const uint16_t shuttle_a[];
 extern const uint16_t shuttle_b[];
+extern const uint16_t bul_a[];
+extern const uint16_t bul_b[];
 
 #endif

@@ -91,6 +91,7 @@ void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale)
 
 void draw_text(uint16_t x, uint16_t y, const char *text, uint16_t color, uint8_t scale)
 {
+    if (!text) return;
     if (scale == 0) scale = 1;
     uint16_t cursor_x = x;
     uint16_t cursor_y = y;
@@ -103,7 +104,7 @@ void draw_text(uint16_t x, uint16_t y, const char *text, uint16_t color, uint8_t
             text++;
             continue;
         }
-        if(cursor_x+20 >= 240)
+        if(cursor_x+20 >= LCD_WIDTH)
         {
             cursor_x = x;
             cursor_y += (FONT_H + 1) * scale + scale;
@@ -117,6 +118,7 @@ void draw_text(uint16_t x, uint16_t y, const char *text, uint16_t color, uint8_t
 
 void draw_text_cutted(uint16_t x, uint16_t y, const char *text, uint16_t color, uint8_t scale)
 {
+    if (!text) return;
     if (scale == 0) scale = 1;
     uint16_t cursor_x = x;
     uint16_t cursor_y = y;
@@ -129,7 +131,7 @@ void draw_text_cutted(uint16_t x, uint16_t y, const char *text, uint16_t color, 
             text++;
             continue;
         }
-        if((cursor_x+20)+FONT_W*scale >= 240)
+        if((cursor_x+20)+FONT_W*scale >= LCD_WIDTH)
         {
             draw_char(cursor_x,cursor_y,'/',color,scale);
             break;
@@ -142,6 +144,7 @@ void draw_text_cutted(uint16_t x, uint16_t y, const char *text, uint16_t color, 
 
 uint16_t text_width(const char *text, uint8_t scale)
 {
+    if (!text) return 0;
     if (scale == 0) scale = 1;
 
     uint16_t w = 0;

@@ -3,7 +3,7 @@
 
 bool load_img_to_buf(const char *name, uint8_t *buf, size_t need)
 {
-    if(!name && !buf && !need)return false;
+    if(!name || !buf || !need)return false;
     FIL file;
     FRESULT fr;
     UINT br = 0;

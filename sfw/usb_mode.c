@@ -1,8 +1,8 @@
 #include "usb_mode.h"
 
-static volatile msc_state_t state = MSC_HIDDEN;
-static volatile bool fail_tur_once = false;
-static volatile bool report_sense_once = false;
+static msc_state_t state = MSC_HIDDEN;
+static bool fail_tur_once = false;
+static bool report_sense_once = false;
 
 void usb_msc_show(void)
 {

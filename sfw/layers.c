@@ -4,6 +4,7 @@ extern uint8_t framebuf[];
 
 void load_img(const char *name, layer *l)
 {
+    if (!name || !l) return;
     FIL file;
     FRESULT fr;
     UINT br = 0;
@@ -21,7 +22,8 @@ void load_img(const char *name, layer *l)
 
 void load_buf( layer *l)
 {
-   draw_buf(l->x, l->y, l->w, l->h);
+    if (!l) return;
+    draw_buf(l->x, l->y, l->w, l->h);
 }
 
 void push_node(node **list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint16_t in_h, const char *in_res_name, uint16_t in_color)
@@ -75,7 +77,7 @@ void free_sub(node **list)
     }
 }
 
-void build_with_res(node *list)
+static void build_with_res(node *list)
 {
     if(!list)return;
 

@@ -30,10 +30,8 @@ void app_open(app *a)
 bool fs_mount_root(void)
 {
     if (fs_mounted)return true;
-    FRESULT fr = f_mount(&fs, "", 1);
-    if (fr != FR_OK)return false;
-    fs_mounted = true;
-    return true;
+    fs_mounted = (f_mount(&fs, "", 1) == FR_OK);
+    return fs_mounted;
 }
 
 void fs_unmount_root(void)

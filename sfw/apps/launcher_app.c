@@ -9,7 +9,7 @@ static void launcher_draw(void)
 
     if (*root)kill_node(root);
 
-    create_layer(root, 0, 0, 240, 280, "/sys/11.res", 0);
+    create_layer(root, 0, 0, 240, 280, "/sys/desktop.res", 0);
     add_sublayer(&(*root)->l, 40, 20, 66, 66, "/apps/disk_app/disk_app.res", 0);
     add_sublayer(&(*root)->l, 134, 20, 66, 66, "/apps/scen_app/scen_app.res", 0);
     add_sublayer(&(*root)->l, 40, 114, 66, 66, "/apps/invaders_app/invaders_app.res", 0);

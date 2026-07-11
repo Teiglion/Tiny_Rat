@@ -281,6 +281,7 @@ void hid_send_keys(uint8_t modifier, uint8_t key1, uint8_t key2, uint8_t key3, u
 
 void hid_send_text(const char *s)
 {
+    if (!s) return;
     while(*s)
     {
         uint8_t modifier = 0;

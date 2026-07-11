@@ -7,7 +7,7 @@ static uint16_t map_coord(int v, int in_min, int in_max, int out_max)
     return (uint16_t)((v - in_min) * out_max / (in_max - in_min));
 }
 
-void touch_reset() {
+static void touch_reset() {
     gpio_put(PIN_TOUCH_RST, 0);
     sleep_ms(20);
     gpio_put(PIN_TOUCH_RST, 1);

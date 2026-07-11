@@ -62,6 +62,7 @@ add_executable(automaton_core
     )
 # pull in common dependencies
 target_link_libraries(automaton_core pico_stdlib tinyusb_device hardware_spi hardware_flash hardware_sync hardware_i2c)
+pico_add_extra_outputs(automaton_core)
 target_include_directories(automaton_core PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/sfw
