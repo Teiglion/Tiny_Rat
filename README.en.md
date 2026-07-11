@@ -32,16 +32,12 @@ It is important to state this openly: there were probably more correct, more ele
 
 Anyone is welcome to rethink, refactor, extend, or improve individual parts in their own way. That is part of the idea: the project is meant to be understandable, hackable, and suitable as a base for further development. Some of the hardware capabilities of the board are intentionally left unused, such as pogo pins connected to free MCU GPIOs for adding extra modules, or the built‑in 16 MB of flash. All of this opens up additional room for customization and extensions.
 
-## Features
+## Capabilities
 
-- **RP2040 firmware** with a modular application lifecycle.
-- **Launcher-style UI** for starting applications directly on the device.
-- **Resource and file handling** for storing scripts, assets, and application data.
-- **USB device mode** with real host interaction scenarios.
-- **Composite USB behavior** for keyboard automation and file transfer workflows.
-- **TinyUSB-based implementation**, using slightly adapted TinyUSB examples integrated into this project structure.
-- **FatFS integration** for file and resource access.
-- **Scripted automation workflow** for inject / payload-oriented scenarios.
+- **Composite USB device (HID + MSC)** — TinyRat is always visible as a keyboard (and mouse), while access to the disk is enabled only in disk mode.
+- **File and resource handling via FatFS** — scenarios, images and other data are read from the filesystem instead of being fully baked into the firmware.
+- **Scenario application (scen_app)** — shows a list of text-based scenarios from the SD card, with paging, selection and launch of the desired automaton script.
+- **Interactive inject mode** — executes the selected script: reads it line by line from the file and sends commands to the host as a USB HID keyboard.
 
 ## Architectural focus
 
@@ -51,7 +47,7 @@ The most interesting part of the project is the combination of several concerns 
 - application architecture;
 - USB descriptors and mode behavior;
 - filesystem-backed resources;
-- practical automation workflows.
+- practical BadUSB workflows.
 
 This combination is more important here than perfect implementation polish. The value of the project is in demonstrating system thinking across firmware, data storage, small-device UX, and host–device interaction.
 
