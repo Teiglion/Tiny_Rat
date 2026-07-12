@@ -183,5 +183,5 @@ To create your own resources, use `conv2fullscreen` and `conv2small` from the `e
 They accept `.jpg`, `.jpeg`, and `.png` input files.
 
 - **Usage:** run `./conv2small resource.png resource.res` in the command line.
-- **Important:** images should be prepared in advance and resized to `240x280` before conversion.
+- **Important:** images should be resized to `240x280` before conversion.
 - For `conv2small`, you can use other dimensions, as long as they are smaller than `240x280`.
