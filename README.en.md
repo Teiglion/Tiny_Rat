@@ -66,7 +66,7 @@ cmake ..
 make -j
 ```
 
-If you just want to get started, the compiled `.uf2` file will be located in the `build` directory. Copy this file to the board while it is in BOOT mode, then unpack the `resourses.tar` archive, copy its contents to the root of the SD card, insert the card into the device, and you are ready to use TinyRat.
+If you just want to get started, the compiled `.uf2` file will be located in the `extra` directory. Copy this file to the board while it is in BOOT mode, then unpack the `resourses.tar` archive, copy its contents to the root of the SD card, insert the card into the device, and you are ready to use TinyRat.
 
 ## Stack
 
