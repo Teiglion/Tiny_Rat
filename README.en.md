@@ -55,7 +55,7 @@ cmake ..
 make -j
 ```
 
-If you just want to get started, there is already a `.uf2` file in the `extra` folder. Copy it to the board while it is connected in BOOT mode, then unpack the `resourses.tar` archive, copy its contents to the root of the SD card, insert the card, and the device is ready to use.
+If you just want to get started, there is already a `.uf2` file in the `extra` folder. Copy it to the board while it is connected in BOOT mode, then unpack the `resources.tar` archive, copy its contents to the root of the SD card, insert the card, and the device is ready to use.
 
 ## Stack
 
