@@ -7,6 +7,7 @@ void event_handler(app_event *ev)
     if(!TouchRead(data, &(ev->x), &(ev->y)) || (data[1] == 0 && data[0] == 0x00))ev->type=NONE;
     else
     {
+        // Touch controller reports gesture ID in data[0].
         if(data[0] == 0x01)ev->type=SWIPE_UP;
         if(data[0] == 0x02)ev->type=SWIPE_DOWN;
         if(data[0] == 0x03)ev->type=SWIPE_LEFT;
@@ -14,6 +15,7 @@ void event_handler(app_event *ev)
         if(data[0] == 0x05)ev->type=TOUCH;
     }
 
+    // Buttons are active low and override touch event type if pressed.
     if (gpio_get(PIN_BUT1) == 0) ev->type = BUT1;
     else if (gpio_get(PIN_BUT2) == 0) ev->type = BUT2;
     else if (gpio_get(PIN_BUT3) == 0) ev->type = BUT3;

@@ -74,6 +74,7 @@ void print_scens(scen_ctx *ctx, const char *path)
 {
     if (!ctx || !path) return;
 
+    // index is a 1-based offset of the first visible script on the current page.
     ctx->is_top = (ctx->index <= 1);
     ctx->is_end = true;
     scen_clear_names(ctx);
@@ -165,6 +166,9 @@ void run_scen(const char *file)
     FRESULT fr;
     char buf[500];
 
+    // Scenario format:
+    // - lines starting with "KEY" are parsed as HID key commands
+    // - all other lines are sent as plain text
     fr = f_open(&f, file, FA_READ);
     if (fr != FR_OK) return;
 
@@ -175,6 +179,7 @@ void run_scen(const char *file)
 
         if (*p == 'K' && *(p + 1) == 'E' && *(p + 2) == 'Y')
         {
+            // KEY-prefixed line switches parser into command mode.
             comm = true;
             p++; p++; p++;
         }
@@ -188,6 +193,7 @@ void run_scen(const char *file)
         {
             if (*p == '+' && comm)
             {
+                 // After '+', remaining characters are converted from ASCII to HID keycodes.
                 plus = true;
                 p++;
                 continue;
@@ -251,6 +257,7 @@ void run_scen(const char *file)
         else
             hid_send_text(buf);
 
+        // Fixed delay between scenario lines to give the host time to process input.
         sleep_ms(1500);
     }
 

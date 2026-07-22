@@ -45,6 +45,9 @@ static void disk_tick(app *self)
     if (ctx->started) return;
 
     ctx->started = true;
+
+    // Expose SD over USB only once after the screen is already shown.
+    // Local FS must be unmounted first so MCU and host never touch it at the same time.
     fs_unmount_root();
     usb_msc_show();
 }
@@ -54,6 +57,8 @@ static void disk_exit(app *self)
     disk_ctx *ctx = (disk_ctx *)self->ctx;
     ctx->started = false;
     if (usb_msc_is_ready())usb_msc_hide();
+
+    // When leaving storage mode, take SD back from the host and remount it locally.
     if (!fs_root_is_mounted())hard_assert(fs_mount_root());
 }
 

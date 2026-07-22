@@ -15,6 +15,8 @@ void load_img(const char *name, layer *l)
     fr = f_read(&file, framebuf, need, &br);
     f_close(&file);
     if (fr != FR_OK) return;
+
+    // Short reads are padded with zeros so partial resources do not leave junk in framebuf.
     if (br < need) {
         for (uint32_t i = br; i < need; i++) framebuf[i] = 0x00;
     }
@@ -29,6 +31,7 @@ void load_buf( layer *l)
 void push_node(node **list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint16_t in_h, const char *in_res_name, uint16_t in_color)
 {
 
+    // Layer list works like a stack: new node is always pushed to the front.
     if(*list==NULL)
     {
         *list= malloc(sizeof(node));
@@ -59,6 +62,7 @@ void push_node(node **list, uint16_t in_x, uint16_t in_y, uint16_t in_w, uint16_
             *list=temp;
             return;
         }
+        // Resource name is copied so caller does not need to keep its string alive.
         memcpy(t,in_res_name,len);
         *(t+(len-1))='\0';
         (*list)->l.res_name=t;
@@ -81,6 +85,7 @@ static void build_with_res(node *list)
 {
     if(!list)return;
 
+    // Redraw the current top layer first.
     if(list->l.res_name)
     {
         load_img(list->l.res_name,&list->l);
@@ -90,6 +95,8 @@ static void build_with_res(node *list)
     {
         fill_rect(list->l.x,list->l.y,list->l.w,list->l.h,list->l.color);
     }
+
+    // Then draw its sublayers on top in stack order.
     node *temp=list->l.sublayers;
     while(temp)
     {
@@ -115,6 +122,8 @@ void pop_node(node **list)
     if((*list)->l.sublayers)free_sub(&(*list)->l.sublayers);
     free(*list);
     *list=temp;
+
+    // After removing the top layer, redraw the one that becomes visible again.
     build_with_res(*list);  
 }
 
@@ -131,6 +140,8 @@ void kill_node(node **list)
 void collapse_list(node **list)
 {
     if(!list || !*list)return;
+
+    // Drop everything above the bottom-most layer and rebuild the final visible state.
     while ((*list)->prev)
     {
         node *temp=(*list)->prev;

@@ -1,5 +1,7 @@
 #include "touch_driver.h"
 
+// Clamp raw controller value to calibrated range
+// and remap it to LCD pixel coordinates.
 static uint16_t map_coord(int v, int in_min, int in_max, int out_max)
 {
     if (v < in_min) v = in_min;
@@ -27,6 +29,7 @@ static bool touch_write_regs(uint8_t reg, uint8_t *buf, size_t len)
 {
     uint8_t temp[16];
     if(len+1 > sizeof(temp))return false;
+    // Small writes are packed into one local buffer: register + payload.
     temp[0]=reg;
     for(size_t i=0;i<len;i++)
     {
@@ -40,12 +43,16 @@ bool TouchRead(uint8_t *data, uint16_t *x, uint16_t *y)
 {
     if (!data || !x || !y) return false;
 
+    // INT is active low: if the line is high, there is nothing new to read.
     if (gpio_get(PIN_TOUCH_INT) != 0) return false;
     
     if (!touch_read_regs(0x01, data, 6))return false;
 
+    // Ignore empty packet / no-touch state.
     if (data[1] == 0 && data[0] == 0x00) return false;
 
+    // Raw touch coordinates come from controller registers
+    // and are then mapped into the LCD coordinate space.
     uint16_t tx = ((data[2] & 0x0F) << 8) | data[3];
     uint16_t ty = ((data[4] & 0x0F) << 8) | data[5];
     *x = map_coord(tx, TOUCH_X_MIN, TOUCH_X_MAX, LCD_WIDTH - 1);
@@ -70,6 +77,9 @@ void TouchInit(void)
     touch_reset();
     uint8_t no_sleep=0x01;
     uint8_t timeout = 0xFF; 
+
+    // Keep controller awake and stretch auto-sleep timeout
+    // so touch reporting stays responsive during normal app work.
     if(!touch_write_regs(0xFE,&no_sleep,1))return;
     sleep_ms(5);
     if(!touch_write_regs(0xF9,&timeout,1))return;

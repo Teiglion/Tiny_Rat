@@ -6,6 +6,7 @@ static bool report_sense_once = false;
 
 void usb_msc_show(void)
 {
+    // When storage becomes visible again, force the host to re-check it once.
     state = MSC_READY;
     fail_tur_once = true;
     report_sense_once = true;   
@@ -30,6 +31,7 @@ msc_state_t usb_msc_state(void)
 
 bool usb_msc_should_fail_tur_once(void)
 {
+    // One-shot flag used to fail TEST UNIT READY exactly once after show().
     if (fail_tur_once)
     {
         fail_tur_once = false;
@@ -41,6 +43,7 @@ bool usb_msc_should_fail_tur_once(void)
 
 bool usb_msc_should_report_sense_once(void)
 {
+    // One-shot flag used to report media change sense data once.
     if (report_sense_once)
     {
         report_sense_once = false;

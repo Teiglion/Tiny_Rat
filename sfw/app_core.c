@@ -22,6 +22,8 @@ void app_open(app *a)
     if (!a) return;
     if (a == current_app) return;
     prev_app = current_app;
+
+    // App switch is explicit: current app exits before the next one enters.
     if (current_app && current_app->exit) current_app->exit(current_app);
     current_app = a;
     if (current_app->enter) current_app->enter(current_app);
@@ -30,6 +32,7 @@ void app_open(app *a)
 bool fs_mount_root(void)
 {
     if (fs_mounted)return true;
+    // Register the root FatFS volume once and keep a local mounted flag.
     fs_mounted = (f_mount(&fs, "", 1) == FR_OK);
     return fs_mounted;
 }
@@ -86,10 +89,12 @@ void system_loop(void)
 {
     while (true)
     {
+        // TinyUSB expects tud_task() to be pumped regularly from the main loop.
         tud_task();
         app_event ev = {0};
         event_handler(&ev);
-
+        
+        // Deliver input/event first, then give the active app its regular tick.
         if (current_app && current_app->on_event && ev.type != NONE)current_app->on_event(current_app, &ev);
         if (current_app && current_app->tick)current_app->tick(current_app);
     }

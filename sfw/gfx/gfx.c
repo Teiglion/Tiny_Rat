@@ -12,6 +12,9 @@ bool load_img_to_buf(const char *name, uint8_t *buf, size_t need)
     fr = f_read(&file, buf, need, &br);
     f_close(&file);
     if (fr != FR_OK) return false;
+
+    // If file is shorter than expected, fill the rest with black
+    // so the caller never works with uninitialized image data.
     if (br < need) {
         for (uint32_t i = br; i < need; i++) buf[i] = 0x00;
     }
@@ -23,6 +26,8 @@ void buf_fill_rect(uint8_t *buf, uint16_t buf_w, uint16_t buf_h, uint16_t x, uin
     if(buf && x < buf_w && y < buf_h && w && h)
     {
         uint16_t *b = (uint16_t *)buf;
+
+        // Clip the rectangle to buffer bounds instead of writing past the edge.
         if(x+w > buf_w) w = buf_w - x;
         if(y+h > buf_h) h = buf_h - y;
         for(uint16_t i = y; i < y+h; i++)
@@ -42,6 +47,8 @@ void buf_draw_sprite_rgb565(uint8_t *buf, uint16_t buf_w, uint16_t buf_h, uint16
     {
         uint16_t *b = (uint16_t *)buf;
         uint16_t dr_w=spr_w,dr_h=spr_h;
+
+        // Draw only the visible part of the sprite if it goes off-screen.
         if(x+spr_w > buf_w) dr_w = buf_w - x;
         if(y+spr_h > buf_h) dr_h = buf_h - y;
         
@@ -51,6 +58,9 @@ void buf_draw_sprite_rgb565(uint8_t *buf, uint16_t buf_w, uint16_t buf_h, uint16
             {
                 uint16_t index = i * buf_w + j;
                 uint16_t src_index = (i-y) * spr_w + (j-x);
+
+                // Transparent color works as a simple chroma key:
+                // matching pixels are skipped and leave the background untouched.
                 if(sprite[src_index] != transparent)b[index] = sprite[src_index];
             }
         }

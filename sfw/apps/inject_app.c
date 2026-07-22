@@ -46,12 +46,15 @@ static void inject_tick(app *self)
 {
     inject_ctx *ctx = (inject_ctx *)self->ctx;
 
+    // Wait until USB is actually mounted by the host before running the scenario.
     if (!tud_mounted()) return;
     if (ctx->done) return;
     if (ctx->path[0] == '\0') return;
 
     ctx->done = true;
     run_scen(ctx->path);
+
+    // After one-shot injection, return to the previous app.
     app *back = app_prev();
     if (!back || back == app_current()) 
     {

@@ -7,6 +7,8 @@ uint16_t tud_hid_get_report_cb(uint8_t instance,uint8_t report_id,hid_report_typ
     (void) report_type;
     (void) buffer;
     (void) reqlen;
+
+    // This injector does not expose custom input reports on request.
     return 0;
 }
 
@@ -17,12 +19,16 @@ void tud_hid_set_report_cb(uint8_t instance,uint8_t report_id,hid_report_type_t 
     (void) report_type;
     (void) buffer;
     (void) bufsize;
+    // Host output reports are currently ignored.
 }
 
 bool ascii_to_hid(char c, uint8_t *modifier, uint8_t *keycode)
 {
     if(modifier)*modifier = 0;
     if(keycode)*keycode = 0;
+
+    // This is a simple US-layout ASCII -> HID mapping.
+    // Host layout still decides what character finally appears on screen.
     if(c >= 'a' && c <= 'z')
     {
         if(keycode)*keycode = HID_KEY_A + (c - 'a');
@@ -245,6 +251,9 @@ void hid_send_key(uint8_t modifier, uint8_t keycode)
     press[0] = keycode;
     while (!tud_mounted())tud_task();
     while (!tud_hid_ready())tud_task();
+
+    // Send key press first, then an empty report to release it.
+    // Without the release report the host may treat the key as still held.
     tud_hid_keyboard_report(1,modifier,press);
     for (int i = 0; i < 20; i++) 
     {
@@ -265,6 +274,8 @@ void hid_send_keys(uint8_t modifier, uint8_t key1, uint8_t key2, uint8_t key3, u
     uint8_t release[6] = {0};
     while (!tud_mounted())tud_task();
     while (!tud_hid_ready())tud_task();
+
+    // Keyboard report can carry up to 6 simultaneous non-modifier keys.
     tud_hid_keyboard_report(1,modifier,press);
     for (int i = 0; i < 20; i++) 
     {
@@ -286,6 +297,8 @@ void hid_send_text(const char *s)
     {
         uint8_t modifier = 0;
         uint8_t keycode = 0;
+        
+        // Unsupported characters are silently skipped for now.
         if(ascii_to_hid(*s,&modifier,&keycode))
         {
             hid_send_key(modifier,keycode);

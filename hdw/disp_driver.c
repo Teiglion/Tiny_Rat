@@ -46,11 +46,14 @@ static void lcd_write_cmd_data(uint8_t cmd,const uint8_t *data, size_t len)
 
 void DisplayInit(void)
 {
+
+    //initializing spi
     spi_init(LCD_SPI_PORT,20000000);
     spi_set_format(LCD_SPI_PORT,8,SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     gpio_set_function(PIN_LCD_SCK,GPIO_FUNC_SPI);
     gpio_set_function(PIN_LCD_MOSI,GPIO_FUNC_SPI);
 
+    //init pins
     gpio_init(PIN_LCD_CS);
     gpio_set_dir(PIN_LCD_CS,GPIO_OUT);
     gpio_put(PIN_LCD_CS,1);
@@ -67,12 +70,15 @@ void DisplayInit(void)
 
     lcd_reset();
 
+    //soft reset
     lcd_write_cmd(0x01);
     sleep_ms(150);
 
-        lcd_write_cmd(0x11);
-        sleep_ms(120);
+    //sleep out
+    lcd_write_cmd(0x11);
+    sleep_ms(120);
 
+    //pixel format & MADCTL setup
     {
         uint8_t d[]={0x55};
         lcd_write_cmd_data(0x3A,d,sizeof(d));
@@ -83,34 +89,38 @@ void DisplayInit(void)
         lcd_write_cmd_data(0x36,d,sizeof(d));
     }
 
-    lcd_write_cmd(0x21);
-    lcd_write_cmd(0x13);
-    lcd_write_cmd(0x29); 
-    fill_rect(0,0,240,280,0x0000);
+    lcd_write_cmd(0x21); //display inversion
+    lcd_write_cmd(0x13); //normal mode on
+    lcd_write_cmd(0x29); //display on
+    fill_rect(0,0,240,280,0x0000); //filling lcd with black color
     sleep_ms(20);
-    gpio_put(PIN_LCD_BK,1);
+    gpio_put(PIN_LCD_BK,1); //backlight on
 }
 
 void set_window(uint16_t x0,uint16_t y0,uint16_t x1,uint16_t y1)
 {
     uint8_t data[4];
+    //you should find offset empirically on your own display
     x0+=LCD_X_OFFSET;
     x1+=LCD_X_OFFSET;
     y0+=LCD_Y_OFFSET;
     y1+=LCD_Y_OFFSET;
 
+    //building column adress & setting up
     data[0]=x0 >> 8;
     data[1]=x0 & 0xFF;
     data[2]=x1 >> 8;
     data[3]=x1 & 0xFF;
     lcd_write_cmd_data(0x2A,data,sizeof(data));
 
+    //building row adress & setting up
     data[0]=y0 >> 8;
     data[1]=y0 & 0xFF;
     data[2]=y1 >> 8;
     data[3]=y1 & 0xFF;
     lcd_write_cmd_data(0x2B,data,sizeof(data));
 
+    //writing in ram
     lcd_write_cmd(0x2C);
 }
 

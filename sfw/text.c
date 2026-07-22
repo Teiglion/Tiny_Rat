@@ -60,6 +60,8 @@ static const uint8_t *glyph_for_char(char c)
 {
     if(c >= '0' && c <= '9')return font_digits[c-'0'];
     if(c >= 'A' && c <= 'Z')return font_upper[c-'A'];
+
+    // Lowercase letters reuse uppercase glyphs to keep the font tiny.
     if(c >= 'a' && c <= 'z')return font_upper[c-'a'];
     switch (c)
     {
@@ -79,6 +81,8 @@ void draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint8_t scale)
 {
     if (scale == 0) scale = 1;
     const uint8_t *glyph = glyph_for_char(c);
+
+    // Each glyph is stored as 5 columns of bit-packed pixels.
     for (uint8_t col=0;col<FONT_W;col++)
     {
         uint8_t bits = glyph[col];
@@ -104,6 +108,8 @@ void draw_text(uint16_t x, uint16_t y, const char *text, uint16_t color, uint8_t
             text++;
             continue;
         }
+
+        // Auto-wrap when the next character would go too far to the right.
         if(cursor_x+20 >= LCD_WIDTH)
         {
             cursor_x = x;
@@ -131,6 +137,8 @@ void draw_text_cutted(uint16_t x, uint16_t y, const char *text, uint16_t color, 
             text++;
             continue;
         }
+
+        // Cut text instead of wrapping and mark truncation with '/'.
         if((cursor_x+20)+FONT_W*scale >= LCD_WIDTH)
         {
             draw_char(cursor_x,cursor_y,'/',color,scale);
@@ -147,6 +155,7 @@ uint16_t text_width(const char *text, uint8_t scale)
     if (!text) return 0;
     if (scale == 0) scale = 1;
 
+    // Width is measured only for the first line.
     uint16_t w = 0;
     while (*text && *text != '\n') {
         w += (FONT_W + 1) * scale;

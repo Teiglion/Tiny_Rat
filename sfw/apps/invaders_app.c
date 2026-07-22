@@ -51,6 +51,7 @@ static uint32_t now_ms(void){return to_ms_since_boot(get_absolute_time());}
 
 static void build_spr_part(const uint16_t *spr, uint16_t *dest)
 {
+    // Build mirrored lower half from the upper 23x10 sprite slice.
     if(!spr || !dest)return;
     for(int i=0; i < 10; i++)
     {
@@ -107,6 +108,8 @@ static int random_shooter(invaders_ctx *ctx, int exclude)
         {
             if (j == i) continue;
             if (!ctx->enemy[j].on) continue;
+
+            // Only the front alien in each lane is allowed to shoot.
             if (ctx->enemy[j].pos_y == ctx->enemy[i].pos_y && ctx->enemy[j].pos_x < ctx->enemy[i].pos_x)
             {
                 front = false;
@@ -230,6 +233,8 @@ static void invaders_tick(app *self)
     uint16_t sprite_part[230] = {0};
     uint8_t aliens_left=0;
 
+    // Invaders move in a zig-zag pattern:
+    // several vertical lane steps, then one horizontal shift toward the shuttle.
     if (now - last_invader_step >= INVADER_STEP_MS)
     {
         if(ctx->step % 2)
@@ -287,12 +292,14 @@ static void invaders_tick(app *self)
         return;
     }
 
+    // Player fire is automatic while the round is running.
     if(now - last_shot_step >= SHOT_STEP_MS)
     {
         last_shot_step = now;
         spawn_bullet(ctx, SHUTTLE_X + 24, SHUTTLE_Y + 7, true);
     }
 
+    // Spawn up to two enemy bullets from random front-line aliens.
     if(now - last_alien_shot >= ALIEN_SHOT_MS * 4)
     {
         last_alien_shot = now;
@@ -307,6 +314,7 @@ static void invaders_tick(app *self)
     {
         for(int j=0;j<20;j++)
         {
+            // Simple bounding-box checks for bullet vs alien and bullet vs shuttle.
             if(ctx->enemy[j].on && ctx->bullets[i].on && ctx->bullets[i].dir && ctx->bullets[i].pos_x+6 >= ctx->enemy[j].pos_x && ctx->bullets[i].pos_x+6 <= ctx->enemy[j].pos_x+23 && ctx->bullets[i].pos_y+6 >= ctx->enemy[j].pos_y && ctx->bullets[i].pos_y <= ctx->enemy[j].pos_y+20)
             {
                 ctx->enemy[j].on = false;
@@ -366,6 +374,7 @@ static void invaders_tick(app *self)
     {
         if((ctx->enemy[i].on && ctx->enemy[i].pos_x <= SHUTTLE_X+23) || ctx->gameover)
         {
+            // Restart the app state after loss or when aliens reach the shuttle line.
             invaders_enter(self);
             return;
         }
